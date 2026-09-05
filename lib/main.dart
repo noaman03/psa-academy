@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'core/config/app_environment.dart';
 import 'core/di/injection_container.dart' as di;
 import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
@@ -15,16 +16,13 @@ import 'presentation/routes/app_routes.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
+  // Initialize Firebase with environment configuration
   await Firebase.initializeApp(
-    options: const FirebaseOptions(
-      apiKey: "AIzaSyBpS5SLEllgLbnghtAT6JEH7UMnQ-Tmjz4",
-      storageBucket: "psa-academy-65088.firebasestorage.app",
-      appId: "1:353959379596:web:9e2db8c46070672e6f71a9",
-      messagingSenderId: "353959379596",
-      projectId: "psa-academy-65088",
-    ),
+    options: AppEnvironment.firebaseOptions,
   );
+
+  // Connect to local emulators if running in emulator / development mode
+  await AppEnvironment.configureEmulatorsIfEnabled();
 
   // Initialize Clean Architecture GetIt dependencies
   await di.initializeDependencies();
