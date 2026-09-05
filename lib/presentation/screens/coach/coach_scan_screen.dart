@@ -251,7 +251,7 @@ class _CoachScanScreenState extends State<CoachScanScreen> {
 
   Widget _buildPlayerConfirmationView(
       dynamic player, List<TrainingTemplateEntity> templates) {
-    final hasZeroSessions = player.sessionsPaid <= 0;
+    final hasZeroSessions = player.remainingSessions <= 0;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -309,7 +309,7 @@ class _CoachScanScreenState extends State<CoachScanScreen> {
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       StatusBadge(
-                        label: '${player.sessionsPaid} SESSIONS LEFT',
+                        label: '${player.remainingSessions} SESSIONS LEFT',
                         statusType: hasZeroSessions
                             ? StatusType.debit
                             : StatusType.paid,

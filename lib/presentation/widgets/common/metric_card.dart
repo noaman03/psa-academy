@@ -60,11 +60,15 @@ class MetricCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xxs),
-          Text(
-            value,
-            style: AppTypography.currencyDisplay.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w800,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: AppTypography.currencyDisplay.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
           if (subtitle != null) ...[

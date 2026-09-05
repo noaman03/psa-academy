@@ -55,13 +55,21 @@ service cloud.firestore {
     match /players/{playerId} {
       allow read: if isSignedIn();
       allow create: if isAdmin() || isOwner(playerId);
-      // Players cannot alter balance or sessions directly!
-      allow update: if isAdmin() || isCoach() || (
-        isOwner(playerId) &&
-        request.resource.data.balance == resource.data.balance &&
-        request.resource.data.sessionsPaid == resource.data.sessionsPaid &&
-        request.resource.data.sessionsAttended == resource.data.sessionsAttended
-      );
+      // Players cannot alter balance or sessions directly; Coaches cannot alter player identity or permission status
+      allow update: if isAdmin() || 
+        (
+          isCoach() &&
+          request.resource.data.userId == resource.data.userId &&
+          request.resource.data.name == resource.data.name &&
+          request.resource.data.isAllowedPlayer == resource.data.isAllowedPlayer
+        ) || 
+        (
+          isOwner(playerId) &&
+          request.resource.data.balance == resource.data.balance &&
+          request.resource.data.sessionsPaid == resource.data.sessionsPaid &&
+          request.resource.data.sessionsAttended == resource.data.sessionsAttended &&
+          request.resource.data.isAllowedPlayer == resource.data.isAllowedPlayer
+        );
       allow delete: if isAdmin();
 
       // Subcollection for player documents

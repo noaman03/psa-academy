@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../domain/entities/app_user.dart';
 import '../screens/auth/splash_gate.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/signup_screen.dart';
@@ -7,6 +8,7 @@ import '../screens/coach/coach_screen.dart';
 import '../screens/coach/coach_scan_screen.dart';
 import '../screens/player/player_screen.dart';
 import 'app_routes.dart';
+import 'role_guard.dart';
 
 class AppRouter {
   AppRouter._();
@@ -34,25 +36,37 @@ class AppRouter {
       case AppRoutes.adminHome:
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const AdminScreen(),
+          builder: (_) => const RoleGuard(
+            allowedRoles: [UserRole.admin],
+            child: AdminScreen(),
+          ),
         );
 
       case AppRoutes.coachHome:
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const CoachScreen(),
+          builder: (_) => const RoleGuard(
+            allowedRoles: [UserRole.admin, UserRole.coach],
+            child: CoachScreen(),
+          ),
         );
 
       case AppRoutes.coachScan:
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const CoachScanScreen(),
+          builder: (_) => const RoleGuard(
+            allowedRoles: [UserRole.admin, UserRole.coach],
+            child: CoachScanScreen(),
+          ),
         );
 
       case AppRoutes.playerHome:
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const PlayerScreen(),
+          builder: (_) => const RoleGuard(
+            allowedRoles: [UserRole.admin, UserRole.player],
+            child: PlayerScreen(),
+          ),
         );
 
       default:

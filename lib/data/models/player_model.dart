@@ -32,9 +32,11 @@ class PlayerModel extends PlayerEntity {
   });
 
   factory PlayerModel.fromJson(Map<String, dynamic> data, [String? docId]) {
+    final int schemaVersion = (data['schemaVersion'] as num?)?.toInt() ?? 1;
+
     // Backward compatible session parsing (handle sessionPaid typo and String types)
     final rawSessionsPaid = data['sessionsPaid'] ?? data['sessionPaid'] ?? 0;
-    final int sessionsPaid = rawSessionsPaid is num
+    final int rawPaidInt = rawSessionsPaid is num
         ? rawSessionsPaid.toInt()
         : int.tryParse(rawSessionsPaid.toString()) ?? 0;
 
@@ -42,6 +44,12 @@ class PlayerModel extends PlayerEntity {
     final int sessionsAttended = rawSessionsAttended is num
         ? rawSessionsAttended.toInt()
         : int.tryParse(rawSessionsAttended.toString()) ?? 0;
+
+    // In legacy schema (version < 2), rawPaidInt was decremented on each attendance,
+    // so it represented remaining sessions. Cumulative lifetime paid is rawPaidInt + sessionsAttended.
+    final int canonicalSessionsPaid = schemaVersion >= 2
+        ? rawPaidInt
+        : (rawPaidInt + sessionsAttended);
 
     // Backward compatible balance parsing (handle paymentBalance vs balance and String types)
     final rawBalance = data['balance'] ?? data['paymentBalance'] ?? 0;
@@ -75,7 +83,7 @@ class PlayerModel extends PlayerEntity {
       category: category,
       ageGroup: ageGroup,
       balance: balance,
-      sessionsPaid: sessionsPaid,
+      sessionsPaid: canonicalSessionsPaid,
       sessionsAttended: sessionsAttended,
       isAllowedPlayer: isAllowed,
       parentName: data['parentName'],
@@ -101,6 +109,7 @@ class PlayerModel extends PlayerEntity {
 
   Map<String, dynamic> toJson() {
     return {
+      'schemaVersion': 2,
       'id': id,
       'userId': userId,
       'name': name,

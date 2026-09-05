@@ -259,7 +259,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final hasPositiveSessions = player.sessionsPaid > 0;
+    final hasPositiveSessions = player.remainingSessions > 0;
     final isAllowed = player.isAllowedPlayer;
 
     return SingleChildScrollView(
@@ -410,7 +410,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                         textBaseline: TextBaseline.alphabetic,
                         children: [
                           Text(
-                            '${player.sessionsPaid}',
+                            '${player.remainingSessions}',
                             style: AppTypography.displaySm.copyWith(
                               color: hasPositiveSessions
                                   ? AppColors.primary
@@ -429,7 +429,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       LinearProgressIndicator(
-                        value: (player.sessionsPaid / 12).clamp(0.0, 1.0),
+                        value: (player.remainingSessions / 12).clamp(0.0, 1.0),
                         backgroundColor: AppColors.outlineVariant,
                         valueColor: AlwaysStoppedAnimation<Color>(
                           hasPositiveSessions

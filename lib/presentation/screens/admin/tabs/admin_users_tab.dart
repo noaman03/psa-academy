@@ -5,6 +5,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../domain/entities/player_entity.dart';
+import '../../../../domain/entities/coach_entity.dart';
 import '../../../controllers/admin_controller.dart';
 import '../../../widgets/common/app_button.dart';
 import '../../../widgets/common/app_text_field.dart';
@@ -62,7 +63,7 @@ class _AdminUsersTabState extends State<AdminUsersTab>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Current Sessions: ${player.sessionsPaid} | Balance: ${AppFormatters.formatCurrency(player.balance)}',
+                    'Current Sessions: ${player.remainingSessions} | Balance: ${AppFormatters.formatCurrency(player.balance)}',
                     style: AppTypography.bodySm.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -135,6 +136,386 @@ class _AdminUsersTabState extends State<AdminUsersTab>
             ],
           );
         },
+      ),
+    );
+  }
+
+  void _showPlayerDetailsSheet(PlayerEntity player) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: AppColors.primaryContainer,
+                    child: Text(
+                      player.name.isNotEmpty ? player.name[0].toUpperCase() : 'P',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          player.name,
+                          style: AppTypography.titleLg
+                              .copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        Text(
+                          '${player.category} • ${player.level} • ${player.ageGroup}',
+                          style: AppTypography.bodySm
+                              .copyWith(color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  StatusBadge(
+                    label: player.isAllowedPlayer ? 'ACTIVE' : 'SUSPENDED',
+                    statusType: player.isAllowedPlayer
+                        ? StatusType.active
+                        : StatusType.debit,
+                  ),
+                ],
+              ),
+              const Divider(height: AppSpacing.xl),
+
+              // KPI stats row
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryContainer.withValues(alpha: 0.3),
+                        borderRadius: AppRadius.mdBorderRadius,
+                      ),
+                      child: Column(
+                        children: [
+                          Text('Remaining', style: AppTypography.labelSm),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${player.remainingSessions}',
+                            style: AppTypography.titleLg.copyWith(
+                              color: player.remainingSessions > 0
+                                  ? AppColors.primary
+                                  : AppColors.error,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: AppRadius.mdBorderRadius,
+                        border: Border.all(color: AppColors.outline),
+                      ),
+                      child: Column(
+                        children: [
+                          Text('Attended', style: AppTypography.labelSm),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${player.sessionsAttended}',
+                            style: AppTypography.titleLg
+                                .copyWith(fontWeight: FontWeight.w800),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: AppRadius.mdBorderRadius,
+                        border: Border.all(color: AppColors.outline),
+                      ),
+                      child: Column(
+                        children: [
+                          Text('Balance', style: AppTypography.labelSm),
+                          const SizedBox(height: 4),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              AppFormatters.formatCurrency(player.balance),
+                              style: AppTypography.titleLg
+                                  .copyWith(fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Detailed Attributes
+              Text('Player Information',
+                  style: AppTypography.titleMd
+                      .copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: AppSpacing.sm),
+              _buildDetailRow(
+                  'Email', player.email.isNotEmpty ? player.email : 'None'),
+              _buildDetailRow('Phone', player.phone ?? 'None'),
+              _buildDetailRow(
+                  'Parent Name', player.parentName ?? 'Not specified'),
+              _buildDetailRow(
+                  'Parent Phone', player.parentPhone ?? 'Not specified'),
+              _buildDetailRow(
+                  'Emergency Contact', player.emergencyContact ?? 'None'),
+              _buildDetailRow(
+                  'Medical Info', player.medicalInfo ?? 'None reported'),
+              _buildDetailRow('Player ID', player.id),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Actions
+              Row(
+                children: [
+                  Expanded(
+                    child: AppButton(
+                      text: '+ Add Sessions',
+                      icon: Icons.add,
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _showAddSessionsDialog(player);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showCoachDetailsSheet(CoachEntity coach) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.75,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
+                    child: Text(
+                      coach.name.isNotEmpty ? coach.name[0].toUpperCase() : 'C',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.secondary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          coach.name,
+                          style: AppTypography.titleLg
+                              .copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        Text(
+                          coach.specialization.isNotEmpty
+                              ? coach.specialization
+                              : 'General Coaching',
+                          style: AppTypography.bodySm
+                              .copyWith(color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  StatusBadge(
+                    label: coach.isAllowedCoach ? 'AUTHORIZED' : 'INACTIVE',
+                    statusType: coach.isAllowedCoach
+                        ? StatusType.active
+                        : StatusType.debit,
+                  ),
+                ],
+              ),
+              const Divider(height: AppSpacing.xl),
+
+              // Rates & Work Summary
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryContainer.withValues(alpha: 0.3),
+                        borderRadius: AppRadius.mdBorderRadius,
+                      ),
+                      child: Column(
+                        children: [
+                          Text('Hourly Rate', style: AppTypography.labelSm),
+                          const SizedBox(height: 4),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              AppFormatters.formatCurrency(coach.hourlyRate),
+                              style: AppTypography.titleLg
+                                  .copyWith(fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: AppRadius.mdBorderRadius,
+                        border: Border.all(color: AppColors.outline),
+                      ),
+                      child: Column(
+                        children: [
+                          Text('Hours Worked', style: AppTypography.labelSm),
+                          const SizedBox(height: 4),
+                          Text(
+                            coach.totalWorkedHours.toStringAsFixed(1),
+                            style: AppTypography.titleLg
+                                .copyWith(fontWeight: FontWeight.w800),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: AppRadius.mdBorderRadius,
+                        border: Border.all(color: AppColors.outline),
+                      ),
+                      child: Column(
+                        children: [
+                          Text('Total Earned', style: AppTypography.labelSm),
+                          const SizedBox(height: 4),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              AppFormatters.formatCurrency(
+                                  coach.totalWorkedHours * coach.hourlyRate),
+                              style: AppTypography.titleLg.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              Text('Coach Profile',
+                  style: AppTypography.titleMd
+                      .copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: AppSpacing.sm),
+              _buildDetailRow('Email', coach.email),
+              _buildDetailRow('Phone', coach.phone ?? 'None'),
+              _buildDetailRow('Experience', '${coach.yearsOfExperience} years'),
+              _buildDetailRow('Coach ID', coach.id),
+              const SizedBox(height: AppSpacing.lg),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label,
+              style: AppTypography.bodySm
+                  .copyWith(color: AppColors.textSecondary)),
+          Flexible(
+            child: Text(
+              value,
+              style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w600),
+              textAlign: TextAlign.end,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -232,12 +613,15 @@ class _AdminUsersTabState extends State<AdminUsersTab>
                                   side: const BorderSide(
                                       color: AppColors.outline),
                                 ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(AppSpacing.md),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
+                                child: InkWell(
+                                  onTap: () => _showPlayerDetailsSheet(player),
+                                  borderRadius: AppRadius.mdBorderRadius,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(AppSpacing.md),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
                                       CircleAvatar(
                                         radius: 24,
                                         backgroundColor:
@@ -304,7 +688,7 @@ class _AdminUsersTabState extends State<AdminUsersTab>
                                                     vertical: 2,
                                                   ),
                                                   decoration: BoxDecoration(
-                                                    color: player.sessionsPaid > 0
+                                                    color: player.remainingSessions > 0
                                                         ? AppColors
                                                             .successContainer
                                                         : AppColors
@@ -313,12 +697,12 @@ class _AdminUsersTabState extends State<AdminUsersTab>
                                                         .smBorderRadius,
                                                   ),
                                                   child: Text(
-                                                    '${player.sessionsPaid} Sessions Left',
+                                                    '${player.remainingSessions} Sessions Left',
                                                     style: TextStyle(
                                                       fontSize: 12,
                                                       fontWeight:
                                                           FontWeight.w600,
-                                                      color: player.sessionsPaid > 0
+                                                      color: player.remainingSessions > 0
                                                           ? AppColors.success
                                                           : AppColors.error,
                                                     ),
@@ -359,7 +743,8 @@ class _AdminUsersTabState extends State<AdminUsersTab>
                                     ],
                                   ),
                                 ),
-                              );
+                              ),
+                            );
                             },
                           ),
 
@@ -386,9 +771,12 @@ class _AdminUsersTabState extends State<AdminUsersTab>
                                   side: const BorderSide(
                                       color: AppColors.outline),
                                 ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(AppSpacing.md),
-                                  child: Row(
+                                child: InkWell(
+                                  onTap: () => _showCoachDetailsSheet(coach),
+                                  borderRadius: AppRadius.mdBorderRadius,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(AppSpacing.md),
+                                    child: Row(
                                     children: [
                                       CircleAvatar(
                                         radius: 24,
@@ -462,7 +850,8 @@ class _AdminUsersTabState extends State<AdminUsersTab>
                                     ],
                                   ),
                                 ),
-                              );
+                              ),
+                            );
                             },
                           ),
                   ],

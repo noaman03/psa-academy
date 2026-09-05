@@ -224,8 +224,11 @@ class _AdminFinanceTabState extends State<AdminFinanceTab>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
                 children: [
                   // Filter Chips
                   Wrap(
@@ -247,7 +250,8 @@ class _AdminFinanceTabState extends State<AdminFinanceTab>
                       );
                     }).toList(),
                   ),
-                  Row(
+                  Wrap(
+                    spacing: AppSpacing.sm,
                     children: [
                       AppButton(
                         text: 'Export PDF',
@@ -256,7 +260,6 @@ class _AdminFinanceTabState extends State<AdminFinanceTab>
                         size: AppButtonSize.small,
                         onPressed: _exportPdfReport,
                       ),
-                      const SizedBox(width: AppSpacing.sm),
                       AppButton(
                         text: 'Record Expense',
                         icon: Icons.add,
@@ -293,11 +296,15 @@ class _AdminFinanceTabState extends State<AdminFinanceTab>
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              AppFormatters.formatCurrency(summary.totalRevenue),
-                              style: AppTypography.titleLg.copyWith(
-                                color: AppColors.success,
-                                fontWeight: FontWeight.w700,
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                AppFormatters.formatCurrency(summary.totalRevenue),
+                                style: AppTypography.titleLg.copyWith(
+                                  color: AppColors.success,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ],
@@ -325,11 +332,15 @@ class _AdminFinanceTabState extends State<AdminFinanceTab>
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              AppFormatters.formatCurrency(summary.totalExpenses),
-                              style: AppTypography.titleLg.copyWith(
-                                color: AppColors.error,
-                                fontWeight: FontWeight.w700,
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                AppFormatters.formatCurrency(summary.totalExpenses),
+                                style: AppTypography.titleLg.copyWith(
+                                  color: AppColors.error,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ],
@@ -357,13 +368,17 @@ class _AdminFinanceTabState extends State<AdminFinanceTab>
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              AppFormatters.formatCurrency(summary.netBalance),
-                              style: AppTypography.titleLg.copyWith(
-                                color: summary.netBalance >= 0
-                                    ? AppColors.primary
-                                    : AppColors.error,
-                                fontWeight: FontWeight.w700,
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                AppFormatters.formatCurrency(summary.netBalance),
+                                style: AppTypography.titleLg.copyWith(
+                                  color: summary.netBalance >= 0
+                                      ? AppColors.primary
+                                      : AppColors.error,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ],

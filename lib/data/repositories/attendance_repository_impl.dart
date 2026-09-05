@@ -37,8 +37,26 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     String? workoutName,
     Map<String, dynamic>? workoutDetails,
   }) async {
+    // 1. Strict identity and parameter validation
+    final trimmedCoachId = coachId.trim();
+    final trimmedPlayerId = playerId.trim();
+    if (trimmedCoachId.isEmpty) {
+      return const Left(ValidationFailure('Coach ID cannot be empty.'));
+    }
+    if (trimmedPlayerId.isEmpty) {
+      return const Left(ValidationFailure('Player ID cannot be empty.'));
+    }
+    if (trimmedCoachId == trimmedPlayerId) {
+      return const Left(ValidationFailure(
+          'Coach ID and Player ID cannot be identical. A coach cannot check in for themselves as a player.'));
+    }
+    if (type != 'fitness' && type != 'recovery') {
+      return const Left(ValidationFailure(
+          'Invalid attendance type. Must be "fitness" or "recovery".'));
+    }
+
     try {
-      final playerRef = _firestore.collection('players').doc(playerId);
+      final playerRef = _firestore.collection('players').doc(trimmedPlayerId);
       final attendanceRef = _firestore.collection('attendance').doc();
       final now = DateTime.now();
       final nowTimestamp = Timestamp.fromDate(now);
@@ -54,35 +72,66 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
         final data = playerDoc.data() ?? {};
         final playerName = data['name'] as String? ?? 'Player';
 
-        // Safe sessions reading
-        final rawPaid = data['sessionsPaid'] ?? data['sessionPaid'] ?? 0;
-        final int sessionsPaid = rawPaid is num ? rawPaid.toInt() : 0;
-
-        final rawAttended = data['sessionsAttended'] ?? 0;
-        final int sessionsAttended =
-            rawAttended is num ? rawAttended.toInt() : 0;
+        final bool isActive = data['isActive'] as bool? ?? true;
+        if (!isActive) {
+          throw Exception('Player account is currently deactivated.');
+        }
 
         final bool isAllowed = data['isAllowedPlayer'] as bool? ?? true;
-        if (!isAllowed) {
-          throw Exception('Player account is suspended.');
+
+        // Canonical Session Accounting
+        final int schemaVersion = (data['schemaVersion'] as num?)?.toInt() ?? 1;
+        final rawPaid = data['sessionsPaid'] ?? data['sessionPaid'] ?? 0;
+        final int rawPaidInt = rawPaid is num ? rawPaid.toInt() : 0;
+        final rawAttended = data['sessionsAttended'] ?? 0;
+        final int currentAttended =
+            rawAttended is num ? rawAttended.toInt() : 0;
+
+        // In legacy schema, sessionsPaid was decremented on attendance.
+        // If schemaVersion < 2, total lifetime paid is rawPaidInt + currentAttended.
+        final int totalLifetimePaid = schemaVersion >= 2
+            ? rawPaidInt
+            : (rawPaidInt + currentAttended);
+
+        final int remainingBeforeCheckIn = totalLifetimePaid - currentAttended;
+
+        // Overdraft validation
+        if (remainingBeforeCheckIn <= 0 && !isAllowed) {
+          throw Exception(
+              'Player has 0 remaining sessions and is not authorized for overdraft check-in.');
         }
+
+        // Duplicate attendance check: within 15 minutes
+        final lastAttTimestamp = data['lastAttendance'] as Timestamp?;
+        if (lastAttTimestamp != null) {
+          final diff = now.difference(lastAttTimestamp.toDate());
+          if (diff.inMinutes < 15 && diff.inMinutes >= 0) {
+            throw Exception(
+                'Duplicate check-in detected. Player already checked in ${diff.inMinutes} minute(s) ago.');
+          }
+        }
+
         final rawBalance = data['balance'] ?? data['paymentBalance'] ?? 0;
         final double currentBalance =
             rawBalance is num ? rawBalance.toDouble() : 0.0;
 
-        final int newAttended = sessionsAttended + 1;
+        final int newAttended = currentAttended + 1;
         final double newBalance = currentBalance - sessionPrice;
 
         // Atomic Player update
         transaction.update(playerRef, {
+          'schemaVersion': 2,
+          'sessionsPaid': totalLifetimePaid,
           'sessionsAttended': newAttended,
           'balance': newBalance,
           'lastAttendance': nowTimestamp,
           'history': FieldValue.arrayUnion([
             {
               'date': nowTimestamp,
-              'type': type == 'recovery' ? 'recovery attendance' : 'fitness attendance',
-              'coachId': coachId,
+              'type': type == 'recovery'
+                  ? 'recovery attendance'
+                  : 'fitness attendance',
+              'coachId': trimmedCoachId,
               'coachName': coachName,
             }
           ]),
@@ -90,9 +139,9 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
 
         // Atomic Attendance Record creation
         final attendanceData = {
-          'playerId': playerId,
+          'playerId': trimmedPlayerId,
           'playerName': playerName,
-          'coachId': coachId,
+          'coachId': trimmedCoachId,
           'coachName': coachName,
           'type': type,
           'status': 'present',
@@ -106,11 +155,11 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
 
         transaction.set(attendanceRef, attendanceData);
 
-        // If sessions are negative, record debit payment entry
-        if (sessionsPaid < newAttended) {
+        // If sessions are overdraft/negative, record debit payment entry
+        if (totalLifetimePaid < newAttended) {
           final paymentRef = _firestore.collection('payments').doc();
           transaction.set(paymentRef, {
-            'playerId': playerId,
+            'playerId': trimmedPlayerId,
             'playerName': playerName,
             'amount': sessionPrice.toDouble(),
             'status': 'debit',
