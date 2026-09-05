@@ -1,0 +1,133 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && (
+        getUserRole() == 'admin' ||
+        exists(/databases/$(database)/documents/admin/$(request.auth.uid)) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+    
+    function isCoach() {
+      return isSignedIn() && (
+        getUserRole() == 'coach' ||
+        exists(/databases/$(database)/documents/coaches/$(request.auth.uid))
+      );
+    }
+    
+    function isPlayer() {
+      return isSignedIn() && (
+        getUserRole() == 'player' ||
+        exists(/databases/$(database)/documents/players/$(request.auth.uid))
+      );
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId) && (
+        request.resource.data.role == 'player' || isAdmin()
+      );
+      allow update: if isAdmin() || (
+        isOwner(userId) && 
+        request.resource.data.role == resource.data.role // Cannot self-promote role!
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Players collection
+    match /players/{playerId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin() || isOwner(playerId);
+      // Players cannot alter balance or sessions directly!
+      allow update: if isAdmin() || isCoach() || (
+        isOwner(playerId) &&
+        request.resource.data.balance == resource.data.balance &&
+        request.resource.data.sessionsPaid == resource.data.sessionsPaid &&
+        request.resource.data.sessionsAttended == resource.data.sessionsAttended
+      );
+      allow delete: if isAdmin();
+
+      // Subcollection for player documents
+      match /documents/{docId} {
+        allow read: if isSignedIn() && (isAdmin() || isCoach() || isOwner(playerId));
+        allow create, delete: if isAdmin() || isCoach() || isOwner(playerId);
+      }
+    }
+
+    // Coaches collection
+    match /coaches/{coachId} {
+      allow read: if isSignedIn();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || isOwner(coachId);
+    }
+
+    // Admin collection
+    match /admin/{adminId} {
+      allow read, write: if isAdmin();
+    }
+    match /admins/{adminId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Attendance collection
+    match /attendance/{attendanceId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin() || isCoach();
+      allow update, delete: if isAdmin();
+    }
+
+    // Coach Work Sessions (check-in/check-out)
+    match /coachWorkSessions/{sessionId} {
+      allow read: if isSignedIn() && (isAdmin() || resource.data.coachId == request.auth.uid);
+      allow create: if isAdmin() || (isCoach() && request.resource.data.coachId == request.auth.uid);
+      allow update: if isAdmin() || (isCoach() && resource.data.coachId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    // Payments collection
+    match /payments/{paymentId} {
+      allow read: if isSignedIn() && (isAdmin() || isCoach() || resource.data.playerId == request.auth.uid);
+      allow create, update, delete: if isAdmin() || isCoach(); // Players CANNOT create or alter payments!
+    }
+
+    // Expenses collection
+    match /expenses/{expenseId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Settings (expense categories, academy config)
+    match /settings/{settingId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Training Templates
+    match /trainingTemplates/{templateId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || isCoach();
+    }
+
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

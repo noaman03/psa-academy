@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/utils/date_parser.dart';
 import '../../domain/entities/attendance_entity.dart';
 
 class AttendanceModel extends AttendanceEntity {
@@ -9,7 +10,8 @@ class AttendanceModel extends AttendanceEntity {
     super.coachId,
     super.coachName,
     required super.date,
-    required super.status,
+    super.status = 'present',
+    super.type = 'fitness',
     super.category,
     super.level,
     super.notes,
@@ -22,48 +24,28 @@ class AttendanceModel extends AttendanceEntity {
     required super.createdAt,
   });
 
-  factory AttendanceModel.fromEntity(AttendanceEntity entity) {
-    return AttendanceModel(
-      id: entity.id,
-      playerId: entity.playerId,
-      playerName: entity.playerName,
-      coachId: entity.coachId,
-      coachName: entity.coachName,
-      date: entity.date,
-      status: entity.status,
-      category: entity.category,
-      level: entity.level,
-      notes: entity.notes,
-      workoutId: entity.workoutId,
-      workoutName: entity.workoutName,
-      workoutDetails: entity.workoutDetails,
-      checkInTime: entity.checkInTime,
-      checkOutTime: entity.checkOutTime,
-      isSeen: entity.isSeen,
-      createdAt: entity.createdAt,
-    );
-  }
-
   factory AttendanceModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = (doc.data() as Map<String, dynamic>?) ?? {};
+
     return AttendanceModel(
       id: doc.id,
       playerId: data['playerId'] ?? '',
-      playerName: data['playerName'] ?? '',
+      playerName: data['playerName'] ?? data['name'] ?? 'Player',
       coachId: data['coachId'],
       coachName: data['coachName'],
-      date: (data['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      date: parseRequiredDateTime(data['date']),
       status: data['status'] ?? 'present',
+      type: data['type'] ?? 'fitness',
       category: data['category'],
       level: data['level'],
       notes: data['notes'],
-      workoutId: data['workoutId'],
-      workoutName: data['workoutName'],
+      workoutId: data['workoutId'] ?? data['workoutTemplateId'],
+      workoutName: data['workoutName'] ?? data['workout'],
       workoutDetails: data['workoutDetails'] as Map<String, dynamic>?,
-      checkInTime: (data['checkInTime'] as Timestamp?)?.toDate(),
-      checkOutTime: (data['checkOutTime'] as Timestamp?)?.toDate(),
+      checkInTime: parseSafeDateTime(data['checkInTime']),
+      checkOutTime: parseSafeDateTime(data['checkOutTime']),
       isSeen: data['isSeen'] ?? false,
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: parseRequiredDateTime(data['createdAt'], parseSafeDateTime(data['date'])),
     );
   }
 
@@ -75,6 +57,7 @@ class AttendanceModel extends AttendanceEntity {
       if (coachName != null) 'coachName': coachName,
       'date': Timestamp.fromDate(date),
       'status': status,
+      'type': type,
       if (category != null) 'category': category,
       if (level != null) 'level': level,
       if (notes != null) 'notes': notes,
@@ -87,27 +70,5 @@ class AttendanceModel extends AttendanceEntity {
       'isSeen': isSeen,
       'createdAt': Timestamp.fromDate(createdAt),
     };
-  }
-
-  AttendanceEntity toEntity() {
-    return AttendanceEntity(
-      id: id,
-      playerId: playerId,
-      playerName: playerName,
-      coachId: coachId,
-      coachName: coachName,
-      date: date,
-      status: status,
-      category: category,
-      level: level,
-      notes: notes,
-      workoutId: workoutId,
-      workoutName: workoutName,
-      workoutDetails: workoutDetails,
-      checkInTime: checkInTime,
-      checkOutTime: checkOutTime,
-      isSeen: isSeen,
-      createdAt: createdAt,
-    );
   }
 }

@@ -1,40 +1,31 @@
 import 'package:dartz/dartz.dart';
 import '../../core/errors/failures.dart';
+import '../entities/app_user.dart';
 
 abstract class AuthRepository {
-  /// Sign in with email and password
-  Future<Either<Failure, String>> signInWithEmailAndPassword(
+  Future<Either<Failure, AppUser>> signInWithEmailAndPassword(
     String email,
     String password,
   );
 
-  /// Sign up with email and password
-  Future<Either<Failure, String>> signUpWithEmailAndPassword(
-    String email,
-    String password,
-  );
+  Future<Either<Failure, AppUser>> signUpPlayer({
+    required String email,
+    required String password,
+    required String name,
+    required String phone,
+    required DateTime dateOfBirth,
+    String? level,
+    String? category,
+    String? ageGroup,
+  });
 
-  /// Sign out
   Future<Either<Failure, void>> signOut();
 
-  /// Get current user ID
-  Future<Either<Failure, String?>> getCurrentUserId();
+  Future<Either<Failure, AppUser?>> getCurrentUser();
 
-  /// Check if user is authenticated
-  Future<Either<Failure, bool>> isAuthenticated();
+  Future<Either<Failure, UserRole>> getUserRole(String uid);
 
-  /// Reset password
   Future<Either<Failure, void>> resetPassword(String email);
 
-  /// Change password
-  Future<Either<Failure, void>> changePassword(
-    String currentPassword,
-    String newPassword,
-  );
-
-  /// Delete account
-  Future<Either<Failure, void>> deleteAccount();
-
-  /// Stream authentication state
   Stream<String?> watchAuthState();
 }
