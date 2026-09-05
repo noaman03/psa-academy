@@ -41,12 +41,12 @@ service cloud.firestore {
     // Users collection
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow create: if isOwner(userId) && (
-        request.resource.data.role == 'player' || isAdmin()
-      );
+      // Only self-registration as player allowed; admin/coach roles require admin
+      allow create: if (isOwner(userId) && request.resource.data.role == 'player') || isAdmin();
+      // Cannot self-promote role
       allow update: if isAdmin() || (
         isOwner(userId) && 
-        request.resource.data.role == resource.data.role // Cannot self-promote role!
+        request.resource.data.role == resource.data.role
       );
       allow delete: if isAdmin();
     }
@@ -54,8 +54,15 @@ service cloud.firestore {
     // Players collection
     match /players/{playerId} {
       allow read: if isSignedIn();
-      allow create: if isAdmin() || isOwner(playerId);
-      // Players cannot alter balance or sessions directly; Coaches cannot alter player identity or permission status
+      // Self creation must have 0 initial balance and sessions; admin can set initial values
+      allow create: if isAdmin() || (
+        isOwner(playerId) &&
+        request.resource.data.sessionsPaid == 0 &&
+        request.resource.data.sessionsAttended == 0 &&
+        request.resource.data.balance == 0
+      );
+      // Players cannot alter balance, sessions, or allowed status directly;
+      // Coaches cannot alter player identity or permission status
       allow update: if isAdmin() || 
         (
           isCoach() &&
@@ -68,7 +75,8 @@ service cloud.firestore {
           request.resource.data.balance == resource.data.balance &&
           request.resource.data.sessionsPaid == resource.data.sessionsPaid &&
           request.resource.data.sessionsAttended == resource.data.sessionsAttended &&
-          request.resource.data.isAllowedPlayer == resource.data.isAllowedPlayer
+          request.resource.data.isAllowedPlayer == resource.data.isAllowedPlayer &&
+          (!('schemaVersion' in request.resource.data) || !('schemaVersion' in resource.data) || request.resource.data.schemaVersion == resource.data.schemaVersion)
         );
       allow delete: if isAdmin();
 
@@ -83,7 +91,12 @@ service cloud.firestore {
     match /coaches/{coachId} {
       allow read: if isSignedIn();
       allow create, delete: if isAdmin();
-      allow update: if isAdmin() || isOwner(coachId);
+      // Coach cannot change their own hourlyRate or authorization status
+      allow update: if isAdmin() || (
+        isOwner(coachId) &&
+        request.resource.data.hourlyRate == resource.data.hourlyRate &&
+        request.resource.data.isAllowedCoach == resource.data.isAllowedCoach
+      );
     }
 
     // Admin collection
@@ -112,7 +125,9 @@ service cloud.firestore {
     // Payments collection
     match /payments/{paymentId} {
       allow read: if isSignedIn() && (isAdmin() || isCoach() || resource.data.playerId == request.auth.uid);
-      allow create, update, delete: if isAdmin() || isCoach(); // Players CANNOT create or alter payments!
+      // Coaches can create a payment during attendance, but CANNOT edit or delete payments
+      allow create: if isAdmin() || isCoach();
+      allow update, delete: if isAdmin();
     }
 
     // Expenses collection
