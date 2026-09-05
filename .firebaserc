@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "psa-academy-65088"
+    "default": "psa-academy-65088",
+    "staging": "psa-academy-staging"
   }
 }

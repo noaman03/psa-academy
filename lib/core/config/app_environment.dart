@@ -72,12 +72,13 @@ class AppEnvironment {
         return const FirebaseOptions(
           apiKey: String.fromEnvironment(
             'STAGING_API_KEY',
-            defaultValue: "AIzaStagingPlaceholderKey",
+            defaultValue: "AIzaSyAZGATfJNnu32cNOk7kS5z15f63ofcITpI",
           ),
-          storageBucket: "$stagingProjectId.appspot.com",
-          appId: "1:353959379596:web:staging",
-          messagingSenderId: "353959379596",
+          storageBucket: "psa-academy-staging.firebasestorage.app",
+          appId: "1:441143149918:web:8adf7625396ff49e8cfbcf",
+          messagingSenderId: "441143149918",
           projectId: stagingProjectId,
+          authDomain: "psa-academy-staging.firebaseapp.com",
         );
       case Environment.production:
         return const FirebaseOptions(
