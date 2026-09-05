@@ -6,6 +6,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/pdf/platform_pdf_export.dart';
+import '../../../../domain/entities/payment_entity.dart';
 import '../../../controllers/admin_controller.dart';
 import '../../../widgets/common/app_button.dart';
 import '../../../widgets/common/app_text_field.dart';
@@ -57,6 +58,129 @@ class _AdminFinanceTabState extends State<AdminFinanceTab>
           start: _startDate,
           end: _endDate,
         );
+  }
+
+  void _showAddPaymentDialog() {
+    final playerController = TextEditingController();
+    final amountController = TextEditingController();
+    final notesController = TextEditingController();
+    String paymentMethod = 'Cash';
+    final formKey = GlobalKey<FormState>();
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Text(
+              'Record New Payment',
+              style: AppTypography.headlineSm.copyWith(fontSize: 18),
+            ),
+            content: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppTextField(
+                      controller: playerController,
+                      labelText: 'Player Name / ID',
+                      hintText: 'e.g. Youssef Ali',
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? 'Please enter player name or ID'
+                          : null,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      controller: amountController,
+                      labelText: 'Amount (EGP)',
+                      hintText: '800',
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Enter amount';
+                        final n = double.tryParse(v.trim());
+                        if (n == null || n <= 0) return 'Enter positive amount';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    DropdownButtonFormField<String>(
+                      initialValue: paymentMethod,
+                      decoration: const InputDecoration(
+                        labelText: 'Payment Method',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: ['Cash', 'Credit Card', 'Bank Transfer', 'InstaPay']
+                          .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() => paymentMethod = val);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      controller: notesController,
+                      labelText: 'Notes (Optional)',
+                      hintText: 'e.g. Monthly subscription',
+                      maxLines: 2,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              AppButton(
+                text: 'Save Payment',
+                size: AppButtonSize.small,
+                isLoading: isSaving,
+                onPressed: () async {
+                  if (!formKey.currentState!.validate()) return;
+                  setDialogState(() => isSaving = true);
+                  final amt = double.parse(amountController.text.trim());
+                  final now = DateTime.now();
+                  final payment = PaymentEntity(
+                    id: '',
+                    playerId: playerController.text.trim(),
+                    playerName: playerController.text.trim(),
+                    amount: amt,
+                    status: 'paid',
+                    paymentMethod: paymentMethod.toLowerCase(),
+                    notes: notesController.text.trim().isNotEmpty
+                        ? notesController.text.trim()
+                        : null,
+                    date: now,
+                    createdAt: now,
+                  );
+
+                  final ok =
+                      await context.read<AdminController>().addPayment(payment);
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(ok
+                            ? 'Payment recorded successfully.'
+                            : 'Failed to record payment.'),
+                        backgroundColor:
+                            ok ? AppColors.success : AppColors.error,
+                      ),
+                    );
+                  }
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   void _showAddExpenseDialog() {
@@ -252,6 +376,7 @@ class _AdminFinanceTabState extends State<AdminFinanceTab>
                   ),
                   Wrap(
                     spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.xs,
                     children: [
                       AppButton(
                         text: 'Export PDF',
@@ -259,6 +384,13 @@ class _AdminFinanceTabState extends State<AdminFinanceTab>
                         variant: AppButtonVariant.outline,
                         size: AppButtonSize.small,
                         onPressed: _exportPdfReport,
+                      ),
+                      AppButton(
+                        text: 'Record Payment',
+                        icon: Icons.payments_outlined,
+                        variant: AppButtonVariant.secondary,
+                        size: AppButtonSize.small,
+                        onPressed: _showAddPaymentDialog,
                       ),
                       AppButton(
                         text: 'Record Expense',

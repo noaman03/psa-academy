@@ -179,6 +179,61 @@ class AdminController extends ChangeNotifier {
     );
   }
 
+  Future<bool> addPayment(PaymentEntity payment) async {
+    final result = await _financeRepository.addPayment(payment);
+    return result.fold(
+      (l) => false,
+      (p) {
+        loadFinanceData();
+        return true;
+      },
+    );
+  }
+
+  Future<bool> createPlayer(PlayerEntity player) async {
+    final result = await _playerRepository.createPlayer(player);
+    return result.fold(
+      (l) => false,
+      (p) {
+        loadUsers();
+        return true;
+      },
+    );
+  }
+
+  Future<bool> deletePlayer(String playerId) async {
+    final result = await _playerRepository.deletePlayer(playerId);
+    return result.fold(
+      (l) => false,
+      (_) {
+        loadUsers();
+        return true;
+      },
+    );
+  }
+
+  Future<bool> createCoach(CoachEntity coach) async {
+    final result = await _coachRepository.createCoach(coach);
+    return result.fold(
+      (l) => false,
+      (c) {
+        loadUsers();
+        return true;
+      },
+    );
+  }
+
+  Future<bool> deleteCoach(String coachId) async {
+    final result = await _coachRepository.deleteCoach(coachId);
+    return result.fold(
+      (l) => false,
+      (_) {
+        loadUsers();
+        return true;
+      },
+    );
+  }
+
   Future<void> loadUsers() async {
     _isLoadingUsers = true;
     notifyListeners();

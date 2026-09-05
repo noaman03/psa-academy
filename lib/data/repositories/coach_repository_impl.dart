@@ -195,7 +195,8 @@ class CoachRepositoryImpl implements CoachRepository {
       final now = DateTime.now();
 
       final duration = now.difference(session.checkIn);
-      final double hoursWorked = duration.inMinutes / 60.0;
+      final double hoursWorked =
+          duration.inMinutes < 0 ? 0.0 : (duration.inMinutes / 60.0);
       final double calculatedSalary = hoursWorked * hourlyRate;
 
       // Update session document

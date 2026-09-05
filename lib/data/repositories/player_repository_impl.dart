@@ -230,7 +230,15 @@ class PlayerRepositoryImpl implements PlayerRepository {
         uploadDate: now,
       );
 
-      await docRef.set(model.toFirestore());
+      try {
+        await docRef.set(model.toFirestore());
+      } catch (firestoreError) {
+        // Clean up orphaned storage file
+        try {
+          await ref.delete();
+        } catch (_) {}
+        rethrow;
+      }
 
       return Right(model);
     } catch (e) {

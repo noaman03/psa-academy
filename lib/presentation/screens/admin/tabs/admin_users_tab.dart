@@ -140,6 +140,316 @@ class _AdminUsersTabState extends State<AdminUsersTab>
     );
   }
 
+  void _confirmDeletePlayer(PlayerEntity player) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Player'),
+        content: Text(
+          'Are you sure you want to permanently delete ${player.name}? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          AppButton(
+            text: 'Delete',
+            size: AppButtonSize.small,
+            variant: AppButtonVariant.primary,
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final ok = await context
+                  .read<AdminController>()
+                  .deletePlayer(player.id);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(ok
+                        ? 'Player deleted successfully.'
+                        : 'Failed to delete player.'),
+                    backgroundColor: ok ? AppColors.success : AppColors.error,
+                  ),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteCoach(CoachEntity coach) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Coach'),
+        content: Text(
+          'Are you sure you want to permanently delete Coach ${coach.name}? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          AppButton(
+            text: 'Delete',
+            size: AppButtonSize.small,
+            variant: AppButtonVariant.primary,
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final ok =
+                  await context.read<AdminController>().deleteCoach(coach.id);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(ok
+                        ? 'Coach deleted successfully.'
+                        : 'Failed to delete coach.'),
+                    backgroundColor: ok ? AppColors.success : AppColors.error,
+                  ),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCreateUserDialog() {
+    final formKey = GlobalKey<FormState>();
+    String userType = _tabController.index == 0 ? 'player' : 'coach';
+    final nameController = TextEditingController();
+    final emailController = TextEditingController();
+    final phoneController = TextEditingController();
+
+    // Player specific
+    String level = 'Beginner';
+    String category = 'Junior';
+    String ageGroup = 'Under 12';
+    final sessionsController = TextEditingController(text: '0');
+
+    // Coach specific
+    final specializationController =
+        TextEditingController(text: 'General Coach');
+    final experienceController = TextEditingController(text: '1');
+    final hourlyRateController = TextEditingController(text: '50');
+
+    bool isSubmitting = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Text(
+              'Create New ${userType == 'player' ? 'Player' : 'Coach'}',
+              style: AppTypography.headlineSm.copyWith(fontSize: 18),
+            ),
+            content: SizedBox(
+              width: 440,
+              child: SingleChildScrollView(
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: SegmentedButton<String>(
+                          segments: const [
+                            ButtonSegment(
+                                value: 'player', label: Text('Player')),
+                            ButtonSegment(
+                                value: 'coach', label: Text('Coach')),
+                          ],
+                          selected: {userType},
+                          onSelectionChanged: (set) {
+                            setDialogState(() => userType = set.first);
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      AppTextField(
+                        controller: nameController,
+                        labelText: 'Full Name *',
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Name is required'
+                            : null,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      AppTextField(
+                        controller: emailController,
+                        labelText: 'Email *',
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Email is required';
+                          }
+                          if (!v.contains('@')) return 'Enter a valid email';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      AppTextField(
+                        controller: phoneController,
+                        labelText: 'Phone Number',
+                        keyboardType: TextInputType.phone,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      if (userType == 'player') ...[
+                        DropdownButtonFormField<String>(
+                          initialValue: level,
+                          decoration: const InputDecoration(
+                            labelText: 'Level',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: [
+                            'Beginner',
+                            'Intermediate',
+                            'Advanced',
+                            'Professional'
+                          ]
+                              .map((l) =>
+                                  DropdownMenuItem(value: l, child: Text(l)))
+                              .toList(),
+                          onChanged: (v) =>
+                              setDialogState(() => level = v ?? level),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        DropdownButtonFormField<String>(
+                          initialValue: category,
+                          decoration: const InputDecoration(
+                            labelText: 'Category',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: ['Junior', 'Senior', 'Elite']
+                              .map((c) =>
+                                  DropdownMenuItem(value: c, child: Text(c)))
+                              .toList(),
+                          onChanged: (v) =>
+                              setDialogState(() => category = v ?? category),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        AppTextField(
+                          controller: sessionsController,
+                          labelText: 'Initial Paid Sessions',
+                          keyboardType: TextInputType.number,
+                        ),
+                      ] else ...[
+                        AppTextField(
+                          controller: specializationController,
+                          labelText: 'Specialization',
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        AppTextField(
+                          controller: experienceController,
+                          labelText: 'Years of Experience',
+                          keyboardType: TextInputType.number,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        AppTextField(
+                          controller: hourlyRateController,
+                          labelText: 'Hourly Rate (EGP)',
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              AppButton(
+                text: 'Create User',
+                size: AppButtonSize.small,
+                isLoading: isSubmitting,
+                onPressed: () async {
+                  if (!formKey.currentState!.validate()) return;
+                  setDialogState(() => isSubmitting = true);
+                  final now = DateTime.now();
+                  final docId = 'user_${now.millisecondsSinceEpoch}';
+
+                  bool ok = false;
+                  if (userType == 'player') {
+                    final initialSessions =
+                        int.tryParse(sessionsController.text.trim()) ?? 0;
+                    final player = PlayerEntity(
+                      id: docId,
+                      userId: docId,
+                      name: nameController.text.trim(),
+                      email: emailController.text.trim(),
+                      phone: phoneController.text.trim().isNotEmpty
+                          ? phoneController.text.trim()
+                          : null,
+                      level: level,
+                      category: category,
+                      ageGroup: ageGroup,
+                      sessionsPaid: initialSessions,
+                      sessionsAttended: 0,
+                      balance: 0.0,
+                      isAllowedPlayer: true,
+                      joinDate: now,
+                      isActive: true,
+                    );
+                    ok = await context
+                        .read<AdminController>()
+                        .createPlayer(player);
+                  } else {
+                    final exp =
+                        int.tryParse(experienceController.text.trim()) ?? 0;
+                    final rate =
+                        double.tryParse(hourlyRateController.text.trim()) ??
+                            50.0;
+                    final coach = CoachEntity(
+                      id: docId,
+                      userId: docId,
+                      name: nameController.text.trim(),
+                      email: emailController.text.trim(),
+                      phoneNumber: phoneController.text.trim().isNotEmpty
+                          ? phoneController.text.trim()
+                          : null,
+                      specialization:
+                          specializationController.text.trim().isNotEmpty
+                              ? specializationController.text.trim()
+                              : 'General',
+                      yearsOfExperience: exp,
+                      hourlyRate: rate,
+                      isAllowedCoach: true,
+                      joinDate: now,
+                      isActive: true,
+                    );
+                    ok =
+                        await context.read<AdminController>().createCoach(coach);
+                  }
+
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(ok
+                            ? '${userType == 'player' ? 'Player' : 'Coach'} created successfully.'
+                            : 'Failed to create $userType.'),
+                        backgroundColor:
+                            ok ? AppColors.success : AppColors.error,
+                      ),
+                    );
+                  }
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   void _showPlayerDetailsSheet(PlayerEntity player) {
     showModalBottomSheet(
       context: context,
@@ -321,7 +631,52 @@ class _AdminUsersTabState extends State<AdminUsersTab>
                       },
                     ),
                   ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: AppButton(
+                      text: player.isAllowedPlayer ? 'Suspend' : 'Activate',
+                      variant: player.isAllowedPlayer
+                          ? AppButtonVariant.outline
+                          : AppButtonVariant.primary,
+                      icon: player.isAllowedPlayer
+                          ? Icons.block_outlined
+                          : Icons.check_circle_outline,
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        final ok = await context
+                            .read<AdminController>()
+                            .togglePlayerAllowed(player);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(ok
+                                  ? 'Player status updated successfully.'
+                                  : 'Failed to update player status.'),
+                              backgroundColor:
+                                  ok ? AppColors.success : AppColors.error,
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ),
                 ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _confirmDeletePlayer(player);
+                  },
+                  icon:
+                      const Icon(Icons.delete_outline, color: AppColors.error),
+                  label: const Text(
+                    'Delete Player Record',
+                    style: TextStyle(color: AppColors.error),
+                  ),
+                ),
               ),
             ],
           ),
@@ -492,6 +847,56 @@ class _AdminUsersTabState extends State<AdminUsersTab>
               _buildDetailRow('Experience', '${coach.yearsOfExperience} years'),
               _buildDetailRow('Coach ID', coach.id),
               const SizedBox(height: AppSpacing.lg),
+
+              // Actions
+              Row(
+                children: [
+                  Expanded(
+                    child: AppButton(
+                      text: coach.isAllowedCoach ? 'Deactivate' : 'Authorize',
+                      variant: coach.isAllowedCoach
+                          ? AppButtonVariant.outline
+                          : AppButtonVariant.primary,
+                      icon: coach.isAllowedCoach
+                          ? Icons.block_outlined
+                          : Icons.check_circle_outline,
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        final ok = await context
+                            .read<AdminController>()
+                            .toggleCoachAllowed(coach);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(ok
+                                  ? 'Coach status updated successfully.'
+                                  : 'Failed to update coach status.'),
+                              backgroundColor:
+                                  ok ? AppColors.success : AppColors.error,
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _confirmDeleteCoach(coach);
+                  },
+                  icon:
+                      const Icon(Icons.delete_outline, color: AppColors.error),
+                  label: const Text(
+                    'Delete Coach Record',
+                    style: TextStyle(color: AppColors.error),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -562,20 +967,34 @@ class _AdminUsersTabState extends State<AdminUsersTab>
               ),
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.md),
-                child: AppTextField(
-                  controller: _searchController,
-                  hintText: 'Search by name, phone or email...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() => _searchQuery = '');
-                          },
-                        )
-                      : null,
-                  onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: AppTextField(
+                        controller: _searchController,
+                        hintText: 'Search by name, phone or email...',
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() => _searchQuery = '');
+                                },
+                              )
+                            : null,
+                        onChanged: (val) =>
+                            setState(() => _searchQuery = val.trim()),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    AppButton(
+                      text: 'Add User',
+                      icon: Icons.person_add_alt_1,
+                      size: AppButtonSize.small,
+                      onPressed: _showCreateUserDialog,
+                    ),
+                  ],
                 ),
               ),
             ],
