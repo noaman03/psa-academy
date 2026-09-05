@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/entities/user_entity.dart';
+import '../../core/utils/date_parser.dart';
+import '../../domain/entities/app_user.dart';
 
-class UserModel extends UserEntity {
+class UserModel extends AppUser {
   const UserModel({
     required super.id,
     required super.email,
@@ -9,37 +10,22 @@ class UserModel extends UserEntity {
     required super.role,
     super.phoneNumber,
     super.profileImageUrl,
+    super.isActive = true,
     required super.createdAt,
-    super.updatedAt,
-    super.isActive,
   });
 
-  factory UserModel.fromEntity(UserEntity entity) {
-    return UserModel(
-      id: entity.id,
-      email: entity.email,
-      name: entity.name,
-      role: entity.role,
-      phoneNumber: entity.phoneNumber,
-      profileImageUrl: entity.profileImageUrl,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
-      isActive: entity.isActive,
-    );
-  }
-
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = (doc.data() as Map<String, dynamic>?) ?? {};
+
     return UserModel(
       id: doc.id,
       email: data['email'] ?? '',
       name: data['name'] ?? '',
-      role: data['role'] ?? '',
-      phoneNumber: data['phoneNumber'],
+      role: AppUser.roleFromString(data['role']),
+      phoneNumber: data['phoneNumber'] ?? data['phone'],
       profileImageUrl: data['profileImageUrl'],
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
       isActive: data['isActive'] ?? true,
+      createdAt: parseRequiredDateTime(data['createdAt']),
     );
   }
 
@@ -47,26 +33,11 @@ class UserModel extends UserEntity {
     return {
       'email': email,
       'name': name,
-      'role': role,
+      'role': AppUser.roleToString(role),
       if (phoneNumber != null) 'phoneNumber': phoneNumber,
       if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
-      'createdAt': Timestamp.fromDate(createdAt),
-      if (updatedAt != null) 'updatedAt': Timestamp.fromDate(updatedAt!),
       'isActive': isActive,
+      'createdAt': Timestamp.fromDate(createdAt),
     };
-  }
-
-  UserEntity toEntity() {
-    return UserEntity(
-      id: id,
-      email: email,
-      name: name,
-      role: role,
-      phoneNumber: phoneNumber,
-      profileImageUrl: profileImageUrl,
-      createdAt: createdAt,
-      updatedAt: updatedAt,
-      isActive: isActive,
-    );
   }
 }

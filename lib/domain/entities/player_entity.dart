@@ -4,9 +4,15 @@ class PlayerEntity extends Equatable {
   final String id;
   final String userId;
   final String name;
+  final String email;
+  final String? phone;
   final String level; // 'Beginner', 'Intermediate', 'Advanced', 'Professional'
-  final String category; // 'U10', 'U12', 'U14', 'U16', 'U18', 'Senior'
-  final String ageGroup;
+  final String category; // 'Junior', 'Senior', 'Elite'
+  final String ageGroup; // 'Under 8', 'Under 10', 'Under 12', etc.
+  final double balance; // Financial balance in EGP
+  final int sessionsPaid; // Number of prepaid sessions
+  final int sessionsAttended; // Number of attended sessions
+  final bool isAllowedPlayer; // Can attend even if balance is 0
   final String? parentName;
   final String? parentPhone;
   final String? emergencyContact;
@@ -18,18 +24,22 @@ class PlayerEntity extends Equatable {
   final String? position;
   final DateTime joinDate;
   final DateTime? lastAttendance;
-  final int attendanceCount;
-  final double paymentBalance;
   final bool isActive;
-  final Map<String, dynamic>? stats;
+  final List<dynamic>? history;
 
   const PlayerEntity({
     required this.id,
     required this.userId,
     required this.name,
+    this.email = '',
+    this.phone,
     required this.level,
     required this.category,
     required this.ageGroup,
+    this.balance = 0.0,
+    this.sessionsPaid = 0,
+    this.sessionsAttended = 0,
+    this.isAllowedPlayer = true,
     this.parentName,
     this.parentPhone,
     this.emergencyContact,
@@ -41,20 +51,29 @@ class PlayerEntity extends Equatable {
     this.position,
     required this.joinDate,
     this.lastAttendance,
-    this.attendanceCount = 0,
-    this.paymentBalance = 0.0,
     this.isActive = true,
-    this.stats,
+    this.history,
   });
+
+  /// Remaining sessions = prepaid - attended
+  int get remainingSessions => sessionsPaid - sessionsAttended;
+
+  bool get canAttendSession => remainingSessions > 0 || isAllowedPlayer;
 
   @override
   List<Object?> get props => [
         id,
         userId,
         name,
+        email,
+        phone,
         level,
         category,
         ageGroup,
+        balance,
+        sessionsPaid,
+        sessionsAttended,
+        isAllowedPlayer,
         parentName,
         parentPhone,
         emergencyContact,
@@ -66,70 +85,7 @@ class PlayerEntity extends Equatable {
         position,
         joinDate,
         lastAttendance,
-        attendanceCount,
-        paymentBalance,
         isActive,
-        stats,
+        history,
       ];
-
-  PlayerEntity copyWith({
-    String? id,
-    String? userId,
-    String? name,
-    String? level,
-    String? category,
-    String? ageGroup,
-    String? parentName,
-    String? parentPhone,
-    String? emergencyContact,
-    DateTime? dateOfBirth,
-    String? address,
-    String? medicalInfo,
-    double? height,
-    double? weight,
-    String? position,
-    DateTime? joinDate,
-    DateTime? lastAttendance,
-    int? attendanceCount,
-    double? paymentBalance,
-    bool? isActive,
-    Map<String, dynamic>? stats,
-  }) {
-    return PlayerEntity(
-      id: id ?? this.id,
-      userId: userId ?? this.userId,
-      name: name ?? this.name,
-      level: level ?? this.level,
-      category: category ?? this.category,
-      ageGroup: ageGroup ?? this.ageGroup,
-      parentName: parentName ?? this.parentName,
-      parentPhone: parentPhone ?? this.parentPhone,
-      emergencyContact: emergencyContact ?? this.emergencyContact,
-      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
-      address: address ?? this.address,
-      medicalInfo: medicalInfo ?? this.medicalInfo,
-      height: height ?? this.height,
-      weight: weight ?? this.weight,
-      position: position ?? this.position,
-      joinDate: joinDate ?? this.joinDate,
-      lastAttendance: lastAttendance ?? this.lastAttendance,
-      attendanceCount: attendanceCount ?? this.attendanceCount,
-      paymentBalance: paymentBalance ?? this.paymentBalance,
-      isActive: isActive ?? this.isActive,
-      stats: stats ?? this.stats,
-    );
-  }
-
-  int get age {
-    if (dateOfBirth == null) return 0;
-    final now = DateTime.now();
-    int age = now.year - dateOfBirth!.year;
-    if (now.month < dateOfBirth!.month ||
-        (now.month == dateOfBirth!.month && now.day < dateOfBirth!.day)) {
-      age--;
-    }
-    return age;
-  }
-
-  bool get hasOutstandingBalance => paymentBalance > 0;
 }

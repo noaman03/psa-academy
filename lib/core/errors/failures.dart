@@ -12,101 +12,84 @@ abstract class Failure extends Equatable {
 
 // General failures
 class ServerFailure extends Failure {
-  const ServerFailure([String message = 'Server error occurred'])
-      : super(message);
+  const ServerFailure([super.message = 'Server error occurred']);
 }
 
 class CacheFailure extends Failure {
-  const CacheFailure([String message = 'Cache error occurred'])
-      : super(message);
+  const CacheFailure([super.message = 'Cache error occurred']);
 }
 
 class NetworkFailure extends Failure {
-  const NetworkFailure([String message = 'Network connection failed'])
-      : super(message);
+  const NetworkFailure([super.message = 'Network connection failed']);
 }
 
 // Auth failures
 class AuthFailure extends Failure {
-  const AuthFailure([String message = 'Authentication failed'])
-      : super(message);
+  const AuthFailure([super.message = 'Authentication failed']);
 }
 
 class UnauthorizedFailure extends Failure {
-  const UnauthorizedFailure([String message = 'Unauthorized access'])
-      : super(message);
+  const UnauthorizedFailure([super.message = 'Unauthorized access']);
 }
 
 class InvalidCredentialsFailure extends Failure {
-  const InvalidCredentialsFailure([String message = 'Invalid credentials'])
-      : super(message);
+  const InvalidCredentialsFailure([super.message = 'Invalid credentials']);
 }
 
 class UserNotFoundFailure extends Failure {
-  const UserNotFoundFailure([String message = 'User not found'])
-      : super(message);
+  const UserNotFoundFailure([super.message = 'User not found']);
 }
 
 class EmailAlreadyExistsFailure extends Failure {
-  const EmailAlreadyExistsFailure([String message = 'Email already exists'])
-      : super(message);
+  const EmailAlreadyExistsFailure([super.message = 'Email already exists']);
 }
 
 class WeakPasswordFailure extends Failure {
-  const WeakPasswordFailure([String message = 'Password is too weak'])
-      : super(message);
+  const WeakPasswordFailure([super.message = 'Password is too weak']);
 }
 
 // Database failures
 class DatabaseFailure extends Failure {
-  const DatabaseFailure([String message = 'Database error occurred'])
-      : super(message);
+  const DatabaseFailure([super.message = 'Database error occurred']);
 }
 
+typedef FirestoreFailure = DatabaseFailure;
+
 class NotFoundFailure extends Failure {
-  const NotFoundFailure([String message = 'Resource not found'])
-      : super(message);
+  const NotFoundFailure([super.message = 'Resource not found']);
 }
 
 class AlreadyExistsFailure extends Failure {
-  const AlreadyExistsFailure([String message = 'Resource already exists'])
-      : super(message);
+  const AlreadyExistsFailure([super.message = 'Resource already exists']);
 }
 
 class PermissionDeniedFailure extends Failure {
-  const PermissionDeniedFailure([String message = 'Permission denied'])
-      : super(message);
+  const PermissionDeniedFailure([super.message = 'Permission denied']);
 }
 
 // Validation failures
 class ValidationFailure extends Failure {
-  const ValidationFailure([String message = 'Validation failed'])
-      : super(message);
+  const ValidationFailure([super.message = 'Validation failed']);
 }
 
 class InvalidInputFailure extends Failure {
-  const InvalidInputFailure([String message = 'Invalid input provided'])
-      : super(message);
+  const InvalidInputFailure([super.message = 'Invalid input provided']);
 }
 
 // Storage failures
 class StorageFailure extends Failure {
-  const StorageFailure([String message = 'Storage error occurred'])
-      : super(message);
+  const StorageFailure([super.message = 'Storage error occurred']);
 }
 
 class FileUploadFailure extends Failure {
-  const FileUploadFailure([String message = 'File upload failed'])
-      : super(message);
+  const FileUploadFailure([super.message = 'File upload failed']);
 }
 
 class FileDownloadFailure extends Failure {
-  const FileDownloadFailure([String message = 'File download failed'])
-      : super(message);
+  const FileDownloadFailure([super.message = 'File download failed']);
 }
 
 // Unknown failure
 class UnknownFailure extends Failure {
-  const UnknownFailure([String message = 'An unknown error occurred'])
-      : super(message);
+  const UnknownFailure([super.message = 'An unknown error occurred']);
 }

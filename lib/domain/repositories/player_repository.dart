@@ -1,48 +1,35 @@
+import 'dart:typed_data';
 import 'package:dartz/dartz.dart';
 import '../entities/player_entity.dart';
+import '../entities/player_document_entity.dart';
 import '../../core/errors/failures.dart';
 
 abstract class PlayerRepository {
-  /// Get player by ID
   Future<Either<Failure, PlayerEntity>> getPlayerById(String playerId);
 
-  /// Get player by user ID
-  Future<Either<Failure, PlayerEntity>> getPlayerByUserId(String userId);
-
-  /// Create new player
   Future<Either<Failure, PlayerEntity>> createPlayer(PlayerEntity player);
 
-  /// Update existing player
   Future<Either<Failure, PlayerEntity>> updatePlayer(PlayerEntity player);
 
-  /// Delete player
   Future<Either<Failure, void>> deletePlayer(String playerId);
 
-  /// Get all players
   Future<Either<Failure, List<PlayerEntity>>> getAllPlayers();
 
-  /// Get players by category
-  Future<Either<Failure, List<PlayerEntity>>> getPlayersByCategory(
-      String category);
+  Future<Either<Failure, void>> updateSessionBalance(
+    String playerId, {
+    required int additionalSessions,
+    required double additionalAmount,
+  });
 
-  /// Get players by level
-  Future<Either<Failure, List<PlayerEntity>>> getPlayersByLevel(String level);
+  Future<Either<Failure, PlayerDocumentEntity>> uploadDocument({
+    required String playerId,
+    required String fileName,
+    required Uint8List bytes,
+  });
 
-  /// Get active players
-  Future<Either<Failure, List<PlayerEntity>>> getActivePlayers();
+  Future<Either<Failure, List<PlayerDocumentEntity>>> getPlayerDocuments(String playerId);
 
-  /// Search players by name
-  Future<Either<Failure, List<PlayerEntity>>> searchPlayersByName(String name);
+  Future<Either<Failure, void>> deleteDocument(String playerId, String documentId, String fileUrl);
 
-  /// Update player balance
-  Future<Either<Failure, void>> updatePlayerBalance(
-      String playerId, double balance);
-
-  /// Update player attendance count
-  Future<Either<Failure, void>> updateAttendanceCount(
-      String playerId, int count);
-
-  /// Update player stats
-  Future<Either<Failure, void>> updatePlayerStats(
-      String playerId, Map<String, dynamic> stats);
+  Stream<PlayerEntity?> watchPlayer(String playerId);
 }

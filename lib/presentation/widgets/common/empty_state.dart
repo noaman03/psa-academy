@@ -1,166 +1,72 @@
 import 'package:flutter/material.dart';
-import '../../../config/theme/color_scheme.dart';
-import '../../../config/theme/text_styles.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_typography.dart';
+import 'app_button.dart';
 
-/// Empty state widget for when there's no data to display
 class EmptyState extends StatelessWidget {
-  final String message;
-  final String? title;
-  final IconData? icon;
+  final String title;
+  final String description;
+  final IconData icon;
+  final String? actionLabel;
   final VoidCallback? onAction;
-  final String? actionButtonText;
-  final Color? iconColor;
 
   const EmptyState({
     super.key,
-    required this.message,
-    this.title,
-    this.icon,
+    required this.title,
+    required this.description,
+    this.icon = Icons.inbox_outlined,
+    this.actionLabel,
     this.onAction,
-    this.actionButtonText,
-    this.iconColor,
   });
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon ?? Icons.inbox_outlined,
-              size: 80,
-              color: iconColor ?? AppColors.grey,
-            ),
-            const SizedBox(height: 24),
-            if (title != null) ...[
-              Text(
-                title!,
-                style: AppTextStyles.titleLarge.copyWith(
-                  color: AppColors.textPrimary,
-                ),
-                textAlign: TextAlign.center,
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: const BoxDecoration(
+                color: AppColors.surfaceVariant,
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: 8),
-            ],
+              child: Icon(icon, size: 36, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: AppSpacing.md),
             Text(
-              message,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+              title,
+              style: AppTypography.headlineSm.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
               ),
               textAlign: TextAlign.center,
             ),
-            if (onAction != null) ...[
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: onAction,
-                icon: const Icon(Icons.add),
-                label: Text(actionButtonText ?? 'Add New'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
+            const SizedBox(height: AppSpacing.xs),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Text(
+                description,
+                style: AppTypography.bodySm.copyWith(
+                  color: AppColors.textSecondary,
                 ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: AppSpacing.lg),
+              AppButton(
+                label: actionLabel!,
+                onPressed: onAction!,
+                variant: AppButtonVariant.primary,
               ),
             ],
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Specific empty states for common scenarios
-class NoDataFound extends StatelessWidget {
-  final String? customMessage;
-  final VoidCallback? onRefresh;
-
-  const NoDataFound({
-    super.key,
-    this.customMessage,
-    this.onRefresh,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return EmptyState(
-      message: customMessage ?? 'No data available at the moment',
-      title: 'No Data Found',
-      icon: Icons.search_off,
-      onAction: onRefresh,
-      actionButtonText: onRefresh != null ? 'Refresh' : null,
-    );
-  }
-}
-
-class NoResultsFound extends StatelessWidget {
-  final String? searchQuery;
-  final VoidCallback? onClearSearch;
-
-  const NoResultsFound({
-    super.key,
-    this.searchQuery,
-    this.onClearSearch,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return EmptyState(
-      message: searchQuery != null
-          ? 'No results found for "$searchQuery"'
-          : 'No results match your search',
-      title: 'No Results',
-      icon: Icons.search_off,
-      onAction: onClearSearch,
-      actionButtonText: onClearSearch != null ? 'Clear Search' : null,
-    );
-  }
-}
-
-class NoItemsYet extends StatelessWidget {
-  final String itemType;
-  final VoidCallback? onAddItem;
-
-  const NoItemsYet({
-    super.key,
-    required this.itemType,
-    this.onAddItem,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return EmptyState(
-      message: 'You don\'t have any $itemType yet',
-      title: 'Nothing Here',
-      icon: Icons.inventory_2_outlined,
-      onAction: onAddItem,
-      actionButtonText: onAddItem != null ? 'Add $itemType' : null,
-    );
-  }
-}
-
-class ConnectionError extends StatelessWidget {
-  final VoidCallback? onRetry;
-
-  const ConnectionError({
-    super.key,
-    this.onRetry,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return EmptyState(
-      message: 'Unable to connect. Please check your internet connection.',
-      title: 'Connection Error',
-      icon: Icons.wifi_off_rounded,
-      iconColor: AppColors.error,
-      onAction: onRetry,
-      actionButtonText: onRetry != null ? 'Try Again' : null,
     );
   }
 }
