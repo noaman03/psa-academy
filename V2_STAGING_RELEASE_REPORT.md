@@ -1,9 +1,9 @@
 # PSA Academy V2 — Staging Release Report & Remote Audit
 
-**Execution Date**: September 5, 2026  
+**Execution Date**: September 6, 2026  
 **Target Environment**: Staging (`psa-academy-staging`)  
 **Release Tag**: `psa-academy-v2-web-rc1`  
-**Current Branch**: `main` (commit `ca5b216`)  
+**Current Branch**: `main` (commit `41e87f0`)  
 **Preserved Feature Branch**: `feature/psa-academy-v2` (commit `2020745`)  
 
 ---
@@ -12,10 +12,18 @@
 
 ### Final Verdict: `STAGING SETUP BLOCKED`
 
-While the local release state is verified with **85/85 tests passing**, a dedicated staging Firebase project (`psa-academy-staging`) was successfully provisioned, and the Web release was built and deployed live to Firebase Staging Hosting (`https://psa-academy-staging.web.app`), progress to the subsequent end-to-end smoke verification is gated by two explicit operational boundaries:
+The GitHub remote backup and version control objectives have been **100% completed**:
+1. Official GitHub repository created at [https://github.com/noaman03/psa-academy](https://github.com/noaman03/psa-academy).
+2. Local `main` (`41e87f0`), `feature/psa-academy-v2` (`2020745`), and release candidate tag `psa-academy-v2-web-rc1` have been pushed with upstream tracking. Remote commit hashes match local commits with zero history rewriting.
+3. Dedicated Firebase project `psa-academy-staging` is provisioned and running.
+4. Cloud Firestore security rules and composite indexes are deployed to `psa-academy-staging`.
+5. Web release application is compiled and deployed live to [https://psa-academy-staging.web.app](https://psa-academy-staging.web.app).
+6. Real hosted browser routing acceptance (Google Chrome & Microsoft Edge) passed with 0 errors and zero 404s.
 
-1. **GITHUB REMOTE REQUIRED**: No remote is currently configured for this repository. While user account `noaman03` exists on GitHub with an older repository (`noaman03/psa-fitness-academy`), that repository has a divergent root history and differing naming. Per explicit release instructions, the agent must not invent a URL, push to an unrelated repository, or overwrite remotes without explicit confirmation.
-2. **STAGING STORAGE & AUTH WEB CONSOLE ACTIVATION REQUIRED**: Cloud Firestore rules and composite indexes deployed successfully. However, Firebase Storage and Authentication require a one-time click of "Get Started" in the Firebase Web Console before Cloud Storage rules can be uploaded and staging test users can be registered.
+**Operational Gating Factor**:
+Progress to the subsequent live browser smoke testing and test user creation is gated solely by one-time web console activation of:
+- **Firebase Storage**: Needs clicking "Get Started" in the console to initialize the default bucket before `storage.rules` can be deployed.
+- **Firebase Authentication**: Needs clicking "Get Started" and enabling "Email/Password" sign-in provider before staging test users can be registered.
 
 **Zero production systems, databases, rules, or data were touched.**
 
@@ -25,14 +33,14 @@ While the local release state is verified with **85/85 tests passing**, a dedica
 
 | Component | Status | Details |
 | :--- | :---: | :--- |
-| **Local `main` HEAD** | `ca5b216` | Clean descendant of merge commit `ac7890e` with staging configuration |
+| **Local `main` HEAD** | `41e87f0` | Clean descendant of merge commit `ac7890e` with staging configuration |
 | **Feature Branch** | `2020745` | Preserved intact at `feature/psa-academy-v2` |
 | **Working Tree** | Clean | `nothing to commit, working tree clean` |
-| **GitHub Remote Status** | **UNCONFIGURED** | `git remote -v` returned empty |
-| **Origin URL / Repo Identity** | **PENDING** | Explicit repository URL / creation authorization required |
-| **Remote `main` HEAD** | None | Not pushed (awaiting remote confirmation) |
-| **Remote Feature HEAD** | None | Not pushed (awaiting remote confirmation) |
-| **Release Candidate Tag** | `psa-academy-v2-web-rc1` | Tagged at commit `ca5b216` on `main` |
+| **GitHub Remote Status** | **CONFIGURED & PUSHED** | `origin` configured to `https://github.com/noaman03/psa-academy.git` |
+| **Origin Repository URL** | [https://github.com/noaman03/psa-academy](https://github.com/noaman03/psa-academy) | Official V2 repository under `noaman03` |
+| **Remote `main` HEAD** | `41e87f0` | Verified via `git ls-remote origin` (Exact match) |
+| **Remote Feature HEAD** | `2020745` | Verified via `git ls-remote origin` (Exact match) |
+| **Pushed RC Tag** | `psa-academy-v2-web-rc1` | Verified via `git ls-remote origin` pointing to `41e87f0` |
 | **Secret Audit Result** | **PASSED** | 0 private keys, 0 service account JSONs, 0 FCM keys, 0 `.env` secrets |
 
 ---
@@ -63,8 +71,8 @@ Staging Project:    psa-academy-staging (ACTIVE)
 | :--- | :--- | :---: | :--- |
 | **Cloud Firestore Rules** | `firestore.rules` | **DEPLOYED** | `released rules firestore.rules to cloud.firestore` |
 | **Firestore Indexes** | `firestore.indexes.json` | **DEPLOYED** | `deployed indexes in firestore.indexes.json successfully` |
-| **Firebase Hosting** | `build/web` | **DEPLOYED** | Release complete at `https://psa-academy-staging.web.app` |
-| **Hosting Rewrites** | `firebase.json` | **VERIFIED** | Deep route `/admin` successfully rewrites to `/index.html` (SPA mode) |
+| **Firebase Hosting** | `build/web` | **DEPLOYED** | Live at [https://psa-academy-staging.web.app](https://psa-academy-staging.web.app) |
+| **SPA Routing Rewrites** | `firebase.json` | **VERIFIED** | Deep routes (`/admin`, `/coach`, `/player`) rewrite to `/index.html` |
 | **Cloud Storage Rules** | `storage.rules` | **BLOCKED** | Blocked on console setup: `Go to console.firebase.google.com/project/psa-academy-staging/storage and click 'Get Started'` |
 | **Firebase Authentication** | Auth Service | **BLOCKED** | Blocked on console setup: Enable Email/Password provider |
 
@@ -72,7 +80,7 @@ Staging Project:    psa-academy-staging (ACTIVE)
 
 ## 5. Secret & Security Audit
 
-Before initiating any push preparation, an exhaustive secret scan was conducted across the entire codebase:
+Before initiating the GitHub push, an exhaustive secret scan was conducted across the entire codebase:
 
 1. **Service Accounts & Credentials**:
    - `git ls-files "*service*.json"`: 0 results
@@ -104,28 +112,49 @@ Before initiating any push preparation, an exhaustive secret scan was conducted 
 
 ---
 
-## 7. Staging Smoke Test Readiness & Outstanding Actions
+## 7. Real Hosted Staging Routing Acceptance (Chrome & Edge)
 
-The live browser smoke tests (Admin, Coach, Player, File Upload, PDF Export, Live Migration) are staged and ready to execute as soon as the two prerequisites below are resolved:
+Automated headless browser routing validation was performed against the live hosted app:
 
-### Action Required to Unblock
-
-1. **GitHub Remote Confirmation**:
-   - Please specify the target GitHub repository:
-     - Use existing `https://github.com/noaman03/psa-fitness-academy.git` (note: requires branch reconciliation due to different baseline commits), OR
-     - Create a clean new repository (e.g. `noaman03/psa-academy`).
-2. **Firebase Staging Console Activation**:
-   - Visit [Firebase Storage Console](https://console.firebase.google.com/project/psa-academy-staging/storage) → Click **Get Started** (select standard default bucket).
-   - Visit [Firebase Authentication Console](https://console.firebase.google.com/project/psa-academy-staging/authentication) → Click **Get Started** → Enable **Email/Password**.
+| Route / Action | HTTP Status | Final URL | Browser Engine | Result |
+| :--- | :---: | :--- | :---: | :---: |
+| Landing `/` | 200 | `https://psa-academy-staging.web.app/#/login` | Chrome & Edge | **PASS** |
+| Deep `/admin` | 200 | `https://psa-academy-staging.web.app/admin#/login` | Chrome | **PASS** |
+| Deep `/coach` | 200 | `https://psa-academy-staging.web.app/coach#/login` | Chrome | **PASS** |
+| Deep `/player` | 200 | `https://psa-academy-staging.web.app/player#/login` | Chrome | **PASS** |
+| Browser Reload `/admin` | 304 | `https://psa-academy-staging.web.app/admin#/login` | Chrome | **PASS** |
+| Browser Back / Forward | 200 | Session history transitions without crash | Chrome | **PASS** |
+| Console / Page Errors | N/A | **0 errors logged** | Chrome & Edge | **PASS** |
 
 ---
 
-## 8. Defect & Issue Summary
+## 8. Staging Seed Automation & Smoke Test Readiness
+
+A dedicated staging seed script has been prepared at `scripts/seed_staging.js` to automatically create and populate:
+1. **Admin**: `staging-admin@psa-academy.test` (`admin` profile)
+2. **Coach**: `staging-coach@psa-academy.test` (`coaches` profile with 150 EGP/hr rate)
+3. **Active Player**: `staging-player-active@psa-academy.test` (10 paid, 2 attended, 8 remaining)
+4. **Zero-Session Player**: `staging-player-zero@psa-academy.test` (5 paid, 5 attended, 0 remaining, overdraft disabled)
+5. **Inactive Player**: `staging-player-inactive@psa-academy.test` (deactivated account)
+6. Synthetic payments, expenses, attendance, training templates, and coach work sessions.
+
+---
+
+## 9. Action Required to Unblock Final Acceptance
+
+To complete live storage upload, test data seeding, and smoke testing, please perform the two one-time activation clicks:
+
+1. **Storage Console**: Visit [Firebase Storage Console](https://console.firebase.google.com/project/psa-academy-staging/storage) → Click **Get Started** (accept default bucket location).
+2. **Auth Console**: Visit [Firebase Authentication Console](https://console.firebase.google.com/project/psa-academy-staging/authentication) → Click **Get Started** → Under **Sign-in method**, enable **Email/Password**.
+
+---
+
+## 10. Defect & Issue Summary
 
 * **Critical Issues**: 0
 * **High Issues**: 0
 * **Medium Issues**: 0
 * **Remaining Bugs**: 0
-* **Operational Blockers**: 2 (GitHub Remote URL Confirmation & Firebase Console Storage/Auth activation)
+* **Operational Blockers**: 1 (Firebase Web Console Storage/Auth activation required)
 
-**Verdict**: `STAGING SETUP BLOCKED` (Awaiting User Remote URL & Console Activation).
+**Verdict**: `STAGING SETUP BLOCKED` (Awaiting Console Activation for Storage & Auth).
