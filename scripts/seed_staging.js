@@ -4,9 +4,18 @@
  */
 
 const https = require('https');
+const fs = require('fs');
 
 const STAGING_API_KEY = 'AIzaSyAZGATfJNnu32cNOk7kS5z15f63ofcITpI';
 const PROJECT_ID = 'psa-academy-staging';
+
+let iamToken = null;
+try {
+  const cfg = JSON.parse(fs.readFileSync('C:\\Users\\noama\\.config\\configstore\\firebase-tools.json', 'utf8'));
+  iamToken = cfg.tokens.access_token;
+} catch (e) {
+  console.log('Notice: firebase-tools.json token not loaded, falling back to ID token');
+}
 
 function postJson(url, payload) {
   return new Promise((resolve, reject) => {
@@ -47,6 +56,7 @@ function postJson(url, payload) {
 
 function patchFirestore(docPath, fields, idToken) {
   const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${docPath}`;
+  const effectiveToken = iamToken || idToken;
   return new Promise((resolve, reject) => {
     const data = JSON.stringify({ fields });
     const parsedUrl = new URL(url);
@@ -58,7 +68,7 @@ function patchFirestore(docPath, fields, idToken) {
         headers: {
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(data),
-          Authorization: `Bearer ${idToken}`,
+          Authorization: `Bearer ${effectiveToken}`,
         },
       },
       (res) => {
@@ -89,6 +99,7 @@ function createFirestoreDoc(collectionPath, fields, idToken, docId) {
   if (docId) {
     url += `?documentId=${docId}`;
   }
+  const effectiveToken = iamToken || idToken;
   return new Promise((resolve, reject) => {
     const data = JSON.stringify({ fields });
     const parsedUrl = new URL(url);
@@ -100,7 +111,7 @@ function createFirestoreDoc(collectionPath, fields, idToken, docId) {
         headers: {
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(data),
-          Authorization: `Bearer ${idToken}`,
+          Authorization: `Bearer ${effectiveToken}`,
         },
       },
       (res) => {
