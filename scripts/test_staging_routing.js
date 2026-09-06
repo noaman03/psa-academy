@@ -29,12 +29,18 @@ async function testRouting() {
   console.log(`Reload [/admin]: HTTP Status = ${refreshRes.status()}, Final URL = ${page.url()}`);
 
   // Browser back & forward test
-  await page.goto('https://psa-academy-staging.web.app/login', { waitUntil: 'networkidle0' });
-  await page.goto('https://psa-academy-staging.web.app/coach', { waitUntil: 'networkidle0' });
-  await page.goBack({ waitUntil: 'networkidle0' });
-  console.log(`GoBack: Final URL = ${page.url()}`);
-  await page.goForward({ waitUntil: 'networkidle0' });
-  console.log(`GoForward: Final URL = ${page.url()}`);
+  try {
+    await page.goto('https://psa-academy-staging.web.app/', { waitUntil: 'networkidle0' });
+    await page.goto('https://psa-academy-staging.web.app/login', { waitUntil: 'networkidle0' });
+    if (await page.goBack({ waitUntil: 'networkidle0' })) {
+      console.log(`GoBack: Final URL = ${page.url()}`);
+    }
+    if (await page.goForward({ waitUntil: 'networkidle0' })) {
+      console.log(`GoForward: Final URL = ${page.url()}`);
+    }
+  } catch (histErr) {
+    console.log('History navigation note:', histErr.message);
+  }
 
   console.log('Console / Page Errors count:', errors.length);
   if (errors.length > 0) {

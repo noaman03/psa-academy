@@ -13,8 +13,11 @@ import 'presentation/controllers/player_controller.dart';
 import 'presentation/routes/app_router.dart';
 import 'presentation/routes/app_routes.dart';
 
+import 'core/utils/url_strategy/url_strategy.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  configureAppUrlStrategy();
 
   // Initialize Firebase with environment configuration
   await Firebase.initializeApp(
