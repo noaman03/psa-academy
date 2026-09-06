@@ -210,7 +210,18 @@ class PlayerRepositoryImpl implements PlayerRepository {
           .child(playerId)
           .child(safeName);
 
-      final uploadTask = await ref.putData(bytes);
+      final extension = fileName.contains('.') ? fileName.split('.').last.toLowerCase() : '';
+      String contentType = 'application/octet-stream';
+      if (extension == 'pdf') {
+        contentType = 'application/pdf';
+      } else if (extension == 'png') {
+        contentType = 'image/png';
+      } else if (extension == 'jpg' || extension == 'jpeg') {
+        contentType = 'image/jpeg';
+      }
+
+      final metadata = SettableMetadata(contentType: contentType);
+      final uploadTask = await ref.putData(bytes, metadata);
       final url = await uploadTask.ref.getDownloadURL();
       final now = DateTime.now();
 

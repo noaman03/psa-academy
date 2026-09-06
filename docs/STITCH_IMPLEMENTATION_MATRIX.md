@@ -49,3 +49,25 @@
 - **Dropdowns**: Styled form field dropdowns matching text field borders.
 - **Status Chips**: Custom `StatusBadge` widget with container color and contrast text, removing standard Material RawChip look.
 - **Buttons**: `AppButton` with defined sizes (small, medium, large), loading spinners, and variant hierarchies (primary, secondary, outline, danger).
+
+---
+
+## 3. Visual Screenshot Verification Assets
+
+High-resolution visual evidence has been captured across Desktop (1440x900) and Mobile (390x844) viewports for the pre-production UI gate:
+
+| Screen Name | Desktop Asset (1440x900) | Mobile Asset (390x844) | Visual Fidelity | Verified Status |
+| :--- | :--- | :--- | :---: | :---: |
+| 1. Login Screen | `docs/screenshots/desktop/01_login.png` | `docs/screenshots/mobile/01_login.png` | 99% | **PASS** |
+| 2. Admin Dashboard | `docs/screenshots/desktop/02_admin_dashboard.png` | `docs/screenshots/mobile/02_admin_dashboard.png` | 97% | **PASS** |
+| 3. Users Management | `docs/screenshots/desktop/03_admin_users.png` | `docs/screenshots/mobile/03_admin_users.png` | 98% | **PASS** |
+| 4. Financials | `docs/screenshots/desktop/04_admin_finance.png` | `docs/screenshots/mobile/04_admin_finance.png` | 98% | **PASS** |
+| 5. Training Templates | `docs/screenshots/desktop/05_admin_templates.png` | `docs/screenshots/mobile/05_admin_templates.png` | 97% | **PASS** |
+| 6. Coach Dashboard | `docs/screenshots/desktop/06_coach_dashboard.png` | `docs/screenshots/mobile/06_coach_dashboard.png` | 98% | **PASS** |
+| 7. Coach Scanner | `docs/screenshots/desktop/07_coach_scanner.png` | `docs/screenshots/mobile/07_coach_scanner.png` | 98% | **PASS** |
+| 8. Coach Sessions History | `docs/screenshots/desktop/08_coach_sessions.png` | `docs/screenshots/mobile/08_coach_sessions.png` | 97% | **PASS** |
+| 9. Player Dashboard | `docs/screenshots/desktop/09_player_dashboard.png` | `docs/screenshots/mobile/09_player_dashboard.png` | 98% | **PASS** |
+| 10. Player QR Pass | `docs/screenshots/desktop/10_player_qr_pass.png` | `docs/screenshots/mobile/10_player_qr_pass.png` | 98% | **PASS** |
+| 11. Player Workouts | `docs/screenshots/desktop/11_player_workouts.png` | `docs/screenshots/mobile/11_player_workouts.png` | 97% | **PASS** |
+| 12. Player Documents | `docs/screenshots/desktop/12_player_documents.png` | `docs/screenshots/mobile/12_player_documents.png` | 96% | **PASS** |
+

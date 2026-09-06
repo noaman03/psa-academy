@@ -55,6 +55,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
           'Invalid attendance type. Must be "fitness" or "recovery".'));
     }
 
+    String? validationError;
+
     try {
       final playerRef = _firestore.collection('players').doc(trimmedPlayerId);
       final attendanceRef = _firestore.collection('attendance').doc();
@@ -66,7 +68,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       await _firestore.runTransaction((transaction) async {
         final playerDoc = await transaction.get(playerRef);
         if (!playerDoc.exists) {
-          throw Exception('Player does not exist in academy database.');
+          validationError = 'Player does not exist in academy database.';
+          throw Exception(validationError);
         }
 
         final data = playerDoc.data() ?? {};
@@ -74,7 +77,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
 
         final bool isActive = data['isActive'] as bool? ?? true;
         if (!isActive) {
-          throw Exception('Player account is currently deactivated.');
+          validationError = 'Player account is currently deactivated.';
+          throw Exception(validationError);
         }
 
         final bool isAllowed = data['isAllowedPlayer'] as bool? ?? true;
@@ -97,8 +101,9 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
 
         // Overdraft validation
         if (remainingBeforeCheckIn <= 0 && !isAllowed) {
-          throw Exception(
-              'Player has 0 remaining sessions and is not authorized for overdraft check-in.');
+          validationError =
+              'Player has 0 remaining sessions and is not authorized for overdraft check-in.';
+          throw Exception(validationError);
         }
 
         // Duplicate attendance check: within 15 minutes
@@ -106,8 +111,9 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
         if (lastAttTimestamp != null) {
           final diff = now.difference(lastAttTimestamp.toDate());
           if (diff.inMinutes < 15 && diff.inMinutes >= 0) {
-            throw Exception(
-                'Duplicate check-in detected. Player already checked in ${diff.inMinutes} minute(s) ago.');
+            validationError =
+                'Duplicate check-in detected. Player already checked in ${diff.inMinutes} minute(s) ago.';
+            throw Exception(validationError);
           }
         }
 
@@ -191,7 +197,18 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       }
       return const Left(FirestoreFailure('Transaction finished without record.'));
     } catch (e) {
-      return Left(FirestoreFailure('Failed to record attendance: $e'));
+      if (validationError != null) {
+        return Left(FirestoreFailure(validationError!));
+      }
+      dynamic errorObj = e;
+      String message = e.toString();
+      try {
+        if (errorObj.error != null) {
+          message = errorObj.error.toString();
+        }
+      } catch (_) {}
+      message = message.replaceFirst('Exception: ', '');
+      return Left(FirestoreFailure('Failed to record attendance: $message'));
     }
   }
 
