@@ -13,7 +13,9 @@ service cloud.firestore {
     }
     
     function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        : null;
     }
     
     function isAdmin() {
@@ -41,8 +43,8 @@ service cloud.firestore {
     // Users collection
     match /users/{userId} {
       allow read: if isSignedIn();
-      // Only self-registration as player allowed; admin/coach roles require admin
-      allow create: if (isOwner(userId) && request.resource.data.role == 'player') || isAdmin();
+      // Only administrators can create users (no public self-registration)
+      allow create: if isAdmin();
       // Cannot self-promote role
       allow update: if isAdmin() || (
         isOwner(userId) && 
@@ -54,13 +56,8 @@ service cloud.firestore {
     // Players collection
     match /players/{playerId} {
       allow read: if isSignedIn();
-      // Self creation must have 0 initial balance and sessions; admin can set initial values
-      allow create: if isAdmin() || (
-        isOwner(playerId) &&
-        request.resource.data.sessionsPaid == 0 &&
-        request.resource.data.sessionsAttended == 0 &&
-        request.resource.data.balance == 0
-      );
+      // Only administrators can create player profiles
+      allow create: if isAdmin();
       // Players cannot alter balance, sessions, or allowed status directly;
       // Coaches cannot alter player identity or permission status
       allow update: if isAdmin() || 
@@ -80,10 +77,10 @@ service cloud.firestore {
         );
       allow delete: if isAdmin();
 
-      // Subcollection for player documents
+      // Subcollection for player documents (read-only for players; admin only for write/delete)
       match /documents/{docId} {
         allow read: if isSignedIn() && (isAdmin() || isCoach() || isOwner(playerId));
-        allow create, delete: if isAdmin() || isCoach() || isOwner(playerId);
+        allow create, update, delete: if isAdmin();
       }
     }
 
@@ -150,6 +147,17 @@ service cloud.firestore {
     match /training_templates/{templateId} {
       allow read: if isSignedIn();
       allow write: if isAdmin() || isCoach();
+    }
+
+    // Assigned Trainings (immutable snapshot copies attached to player sessions)
+    match /assignedTrainings/{assignmentId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /assigned_trainings/{assignmentId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     // Notifications collection

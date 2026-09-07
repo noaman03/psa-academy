@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../domain/entities/app_user.dart';
 import '../screens/auth/splash_gate.dart';
 import '../screens/auth/login_screen.dart';
-import '../screens/auth/signup_screen.dart';
 import '../screens/admin/admin_screen.dart';
 import '../screens/coach/coach_screen.dart';
 import '../screens/coach/coach_scan_screen.dart';
@@ -28,9 +27,10 @@ class AppRouter {
         );
 
       case AppRoutes.signup:
+        // Public self-registration is disabled; redirect to Login
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const SignUpScreen(),
+          builder: (_) => const LoginScreen(),
         );
 
       case AppRoutes.adminHome:

@@ -83,9 +83,9 @@ async function runCoachJourney() {
       throw new Error('Coach login failed: home screen did not render');
     }
 
-    // Verify hourly rate displayed
+    // Verify hourly rate is removed from coach UI
     const rateText = await getAllVisibleText(page);
-    assert('Coach Hourly Rate Displayed', rateText.includes('150') || rateText.includes('Rate'));
+    assert('Coach Hourly Rate Removed From Coach UI', !rateText.includes('150/hr') && !rateText.includes('Rate:'));
 
     // 2. CLOCK IN (START WORK SHIFT)
     console.log('\n--- 2. COACH CLOCK IN (START SHIFT) ---');
@@ -246,7 +246,7 @@ async function runCoachJourney() {
     assert('Click Logout Button', clickedLogout);
     await new Promise((r) => setTimeout(r, 3000));
 
-    const onLogin = await waitForText(page, 'Sign in to access', 10000);
+    const onLogin = await waitForText(page, 'Welcome back', 10000);
     assert('Redirected to Login Screen on Logout', onLogin);
   } finally {
     await browser.close();

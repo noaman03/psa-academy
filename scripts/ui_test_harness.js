@@ -150,11 +150,11 @@ async function waitForText(page, text, timeout = 10000) {
 }
 
 async function loginViaUI(page, email, password) {
-  await page.goto('https://psa-academy-staging.web.app/login', { waitUntil: 'networkidle0', timeout: 30000 });
+  await page.goto('https://psa-academy-staging.web.app/login', { waitUntil: 'domcontentloaded', timeout: 30000 });
   await new Promise((r) => setTimeout(r, 2000));
   await enableFlutterSemantics(page);
 
-  const emailInput = await page.$('input[type="text"]');
+  const emailInput = (await page.$('input[type="email"]')) || (await page.$('input[type="text"]'));
   const pwdInput = await page.$('input[type="password"]');
 
   if (!emailInput || !pwdInput) {

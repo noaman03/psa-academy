@@ -374,6 +374,15 @@ test('Product Acceptance Journeys on Staging/Emulator', { concurrency: 1 }, asyn
     // Setup player
     await testEnv.withSecurityRulesDisabled(async (context) => {
       const db = context.firestore();
+      await db.collection('users').doc('admin_01').set({
+        name: 'Academy Director',
+        email: 'admin@psa-academy.com',
+        role: 'admin',
+      });
+      await db.collection('admins').doc('admin_01').set({
+        userId: 'admin_01',
+        name: 'Academy Director',
+      });
       await db.collection('users').doc('player_ziad').set({
         name: 'Ziad Tareq',
         email: 'ziad@psa-academy.com',
@@ -405,35 +414,63 @@ test('Product Acceptance Journeys on Staging/Emulator', { concurrency: 1 }, asyn
     const remaining = profile.data().sessionsPaid - profile.data().sessionsAttended;
     assert.strictEqual(remaining, 8, 'Remaining sessions matches');
 
-    // 2. Upload Document (JPEG) to Storage
+    // 2. Player cannot upload documents directly (Read-only for players)
     const imageRef = playerStorage.ref('player_documents/player_ziad/medical_clearance.jpg');
     const imageBytes = Buffer.from('fake-jpeg-binary-data');
-    await assertSucceeds(imageRef.put(imageBytes, { contentType: 'image/jpeg' }));
+    await assertFails(imageRef.put(imageBytes, { contentType: 'image/jpeg' }));
 
-    // 3. Upload Document (PDF) to Storage
-    const pdfRef = playerStorage.ref('player_documents/player_ziad/academy_contract.pdf');
-    const pdfBytes = Buffer.from('fake-pdf-contract-bytes');
-    await assertSucceeds(pdfRef.put(pdfBytes, { contentType: 'application/pdf' }));
-
-    // 4. Save metadata in Firestore subcollection
+    // 3. Player cannot write document metadata in Firestore
     const docMetaRef = playerDb
       .collection('players')
       .doc('player_ziad')
       .collection('documents')
-      .doc();
-    await assertSucceeds(
+      .doc('doc_clearance');
+    await assertFails(
       docMetaRef.set({
         playerId: 'player_ziad',
-        fileName: 'academy_contract.pdf',
+        fileName: 'medical_clearance.jpg',
         downloadUrl: 'https://storage.example.com/mock',
-        fileSize: pdfBytes.length,
+        fileSize: imageBytes.length,
         uploadDate: new Date(),
       })
     );
 
-    // 5. Test Unauthorized Access (Cannot access or delete another player's files)
+    // 4. Admin uploads document and saves metadata for the player
+    const adminContext = testEnv.authenticatedContext('admin_01', { role: 'admin' });
+    const adminStorage = adminContext.storage();
+    const adminDb = adminContext.firestore();
+
+    const adminImageRef = adminStorage.ref('player_documents/player_ziad/medical_clearance.jpg');
+    await assertSucceeds(adminImageRef.put(imageBytes, { contentType: 'image/jpeg' }));
+
+    const adminDocMetaRef = adminDb
+      .collection('players')
+      .doc('player_ziad')
+      .collection('documents')
+      .doc('doc_clearance');
+    await assertSucceeds(
+      adminDocMetaRef.set({
+        playerId: 'player_ziad',
+        fileName: 'medical_clearance.jpg',
+        downloadUrl: 'https://storage.example.com/mock',
+        fileSize: imageBytes.length,
+        uploadDate: new Date(),
+      })
+    );
+
+    // 5. Player can read the metadata and download URL
+    const readDoc = await playerDb
+      .collection('players')
+      .doc('player_ziad')
+      .collection('documents')
+      .doc('doc_clearance')
+      .get();
+    assert.strictEqual(readDoc.exists, true);
+    assert.strictEqual(readDoc.data().fileName, 'medical_clearance.jpg');
+
+    // 6. Test Unauthorized Access (Cannot delete or write other player files)
     const otherPlayerRef = playerStorage.ref('player_documents/player_other/private.pdf');
-    await assertFails(otherPlayerRef.put(pdfBytes, { contentType: 'application/pdf' }));
+    await assertFails(otherPlayerRef.put(Buffer.from('fake'), { contentType: 'application/pdf' }));
     await assertFails(otherPlayerRef.delete());
   });
 

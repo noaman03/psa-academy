@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_typography.dart';
 import '../../../domain/entities/app_user.dart';
 import '../../controllers/auth_controller.dart';
 import '../../routes/app_routes.dart';
@@ -54,60 +51,62 @@ class _SplashGateState extends State<SplashGate> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.secondary,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Logo container
-            Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.35),
-                    blurRadius: 24,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.sports_soccer,
-                  color: AppColors.textWhite,
-                  size: 52,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF006D6F),
+              Color(0xFF00A6A6),
+              Color(0xFFFF7A45),
+            ],
+          ),
+        ),
+        child: Center(
+          child: Container(
+            width: 220,
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.16),
+                  blurRadius: 30,
+                  offset: const Offset(0, 18),
                 ),
-              ),
+              ],
             ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'PSA ACADEMY',
-              style: AppTypography.displaySm.copyWith(
-                color: AppColors.textWhite,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.5,
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Hero(
+                  tag: 'app_logo',
+                  child: Image.asset(
+                    'assets/images/main_large.png',
+                    width: 120,
+                    height: 120,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const LinearProgressIndicator(
+                  minHeight: 4,
+                  color: Color(0xFF00A6A6),
+                  backgroundColor: Color(0xFFE4E7EC),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Preparing your academy dashboard',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF667085),
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
             ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Performance Sports Academy',
-              style: AppTypography.bodyMd.copyWith(
-                color: AppColors.textTertiary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xxl),
-            const SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

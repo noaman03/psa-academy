@@ -1,6 +1,4 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pretty_qr_code/pretty_qr_code.dart';
 import 'package:provider/provider.dart';
@@ -15,8 +13,8 @@ import '../../controllers/player_controller.dart';
 import '../../widgets/common/app_button.dart';
 import '../../widgets/common/app_scaffold.dart';
 import '../../widgets/common/empty_state.dart';
-import '../../widgets/common/confirmation_dialog.dart';
 import '../../widgets/common/status_badge.dart';
+import '../../widgets/common/training_details_dialog.dart';
 import '../../routes/app_routes.dart';
 
 class PlayerScreen extends StatefulWidget {
@@ -69,9 +67,26 @@ class _PlayerScreenState extends State<PlayerScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: AppRadius.xlBorderRadius),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
         title: Center(
           child: Column(
             children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                  child: Image(
+                    image: AssetImage('assets/images/mainNOBGF.png'),
+                    width: 32,
+                    height: 32,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 'Player Training Pass',
                 style: AppTypography.headlineSm.copyWith(
@@ -79,12 +94,13 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   color: AppColors.secondary,
                 ),
               ),
-              const SizedBox(height: AppSpacing.xs),
+              const SizedBox(height: 4),
               Text(
-                'Show this code to your coach at check-in',
+                'Show this QR code to your coach at check-in',
                 style: AppTypography.bodySm.copyWith(
                   color: AppColors.textSecondary,
                 ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -121,32 +137,12 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 4),
             Text(
-              'ID: ${player.id}',
+              '${player.category} • ${player.level} (${player.ageGroup})',
               style: AppTypography.bodySm.copyWith(
-                color: AppColors.textTertiary,
-                fontFamily: 'monospace',
+                color: AppColors.textSecondary,
               ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton.icon(
-                  icon: const Icon(Icons.copy, size: 16),
-                  label: const Text('Copy ID'),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: player.id));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Player ID copied to clipboard!'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                ),
-              ],
             ),
           ],
         ),
@@ -161,61 +157,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
         ],
       ),
     );
-  }
-
-  Future<void> _pickAndUploadDocument(String playerId) async {
-    try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
-        withData: true,
-      );
-
-      if (result != null && result.files.isNotEmpty) {
-        final file = result.files.first;
-        final bytes = file.bytes;
-
-        if (bytes == null) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Could not read file data. Please try again.'),
-                backgroundColor: AppColors.error,
-              ),
-            );
-          }
-          return;
-        }
-
-        if (mounted) {
-          final ok = await context.read<PlayerController>().uploadDocument(
-                playerId,
-                fileName: file.name,
-                bytes: bytes,
-              );
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(ok
-                    ? 'Document uploaded successfully!'
-                    : 'Failed to upload document.'),
-                backgroundColor: ok ? AppColors.success : AppColors.error,
-              ),
-            );
-          }
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('File picker error: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
   }
 
   @override
@@ -324,63 +265,74 @@ class _PlayerScreenState extends State<PlayerScreen> {
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          // Digital Pass Action Card
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: AppRadius.lgBorderRadius,
-              side: const BorderSide(color: AppColors.primary, width: 1.5),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(AppSpacing.sm),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryContainer,
-                          borderRadius: AppRadius.mdBorderRadius,
-                        ),
-                        child: const Icon(
-                          Icons.qr_code,
-                          size: 32,
-                          color: AppColors.primaryDark,
-                        ),
+          // Digital Pass Action Card (Whole Card Clickable)
+          Semantics(
+            button: true,
+            label: 'Digital Training Pass',
+            child: Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: AppRadius.lgBorderRadius,
+                side: const BorderSide(color: AppColors.primary, width: 1.5),
+              ),
+              child: InkWell(
+                borderRadius: AppRadius.lgBorderRadius,
+                onTap: () => _showQrPassDialog(player),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryContainer,
+                        borderRadius: AppRadius.mdBorderRadius,
                       ),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Digital Training Pass',
-                              style: AppTypography.titleMd.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            Text(
-                              'Tap to open your full-screen QR code for coach scanning',
-                              style: AppTypography.bodySm.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: const Icon(
+                        Icons.qr_code_2,
+                        size: 36,
+                        color: AppColors.primaryDark,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  AppButton(
-                    text: 'View QR Pass',
-                    icon: Icons.qr_code_scanner,
-                    size: AppButtonSize.large,
-                    onPressed: () => _showQrPassDialog(player),
-                  ),
-                ],
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Digital Training Pass',
+                            style: AppTypography.titleMd.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Tap anywhere on this card to open your full-screen QR check-in pass',
+                            style: AppTypography.bodySm.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryContainer.withValues(alpha: 0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 14,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
+          ),
           ),
           const SizedBox(height: AppSpacing.lg),
 
@@ -518,53 +470,64 @@ class _PlayerScreenState extends State<PlayerScreen> {
             borderRadius: AppRadius.mdBorderRadius,
             side: const BorderSide(color: AppColors.outline),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      DateFormat('EEEE, dd MMMM yyyy').format(item.date),
-                      style: AppTypography.labelLg.copyWith(
-                        fontWeight: FontWeight.w700,
+          child: InkWell(
+            borderRadius: AppRadius.mdBorderRadius,
+            onTap: () => TrainingDetailsDialog.show(context, item),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        DateFormat('EEEE, dd MMMM yyyy').format(item.date),
+                        style: AppTypography.labelLg.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    StatusBadge(
-                      label: item.type.toUpperCase(),
-                      statusType: item.type == 'recovery'
-                          ? StatusType.pending
-                          : StatusType.paid,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Coach: ${item.coachName} • Time: ${DateFormat('hh:mm a').format(item.date)}',
-                  style: AppTypography.bodySm.copyWith(
-                    color: AppColors.textSecondary,
+                      StatusBadge(
+                        label: item.type.toUpperCase(),
+                        statusType: item.type == 'recovery'
+                            ? StatusType.pending
+                            : StatusType.paid,
+                      ),
+                    ],
                   ),
-                ),
-                if (item.workoutName != null && item.workoutName!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Coach: ${item.coachName} • Time: ${DateFormat('hh:mm a').format(item.date)}',
+                    style: AppTypography.bodySm.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                   const Divider(color: AppColors.outlineVariant, height: 16),
                   Row(
                     children: [
                       const Icon(Icons.fitness_center,
                           size: 16, color: AppColors.primary),
                       const SizedBox(width: AppSpacing.xs),
-                      Text(
-                        'Routine: ${item.workoutName}',
-                        style: AppTypography.bodyMd.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primaryDark,
+                      Expanded(
+                        child: Text(
+                          item.workoutName != null && item.workoutName!.isNotEmpty
+                              ? 'Routine: ${item.workoutName}'
+                              : 'Tap to view routine plan',
+                          style: AppTypography.bodyMd.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primaryDark,
+                          ),
                         ),
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 12,
+                        color: AppColors.textTertiary,
                       ),
                     ],
                   ),
                 ],
-              ],
+              ),
             ),
           ),
         );
@@ -575,11 +538,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
   Widget _buildDocumentsTab(
       PlayerController playerController, String playerId) {
     final docs = playerController.documents;
-    final isUploading = playerController.isUploadingDocument;
 
     return Column(
       children: [
-        // Action Bar
+        // Action Bar (Read-only overview)
         Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           color: AppColors.surface,
@@ -592,24 +554,32 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              AppButton(
-                text: 'Upload File',
-                icon: Icons.upload_file,
-                size: AppButtonSize.small,
-                isLoading: isUploading,
-                onPressed: () => _pickAndUploadDocument(playerId),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: AppRadius.fullBorderRadius,
+                  border: Border.all(color: AppColors.outline),
+                ),
+                child: Text(
+                  'Verified Vault',
+                  style: AppTypography.labelSm.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),
         ),
 
-        // Document List
+        // Document List (Read-only)
         Expanded(
           child: docs.isEmpty
               ? const EmptyState(
-                  title: 'No Documents Uploaded',
+                  title: 'No Documents on File',
                   description:
-                      'Upload your medical clearance certificates, athlete fitness records, or ID cards.',
+                      'Medical clearances, insurance certificates, and fitness records uploaded by academy administrators will appear here.',
                   icon: Icons.folder_open,
                 )
               : ListView.separated(
@@ -642,42 +612,16 @@ class _PlayerScreenState extends State<PlayerScreen> {
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.open_in_new, size: 20),
-                            tooltip: 'View Document',
-                            onPressed: () async {
-                              final uri = Uri.parse(doc.fileUrl);
-                              if (await canLaunchUrl(uri)) {
-                                await launchUrl(uri,
-                                    mode: LaunchMode.externalApplication);
-                              }
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline,
-                                size: 20, color: AppColors.error),
-                            tooltip: 'Delete Document',
-                            onPressed: () {
-                              showConfirmationDialog(
-                                context: context,
-                                title: 'Delete Document',
-                                message:
-                                    'Are you sure you want to delete "${doc.title}"?',
-                                confirmText: 'Delete',
-                                isDangerous: true,
-                                onConfirm: () =>
-                                    playerController.deleteDocument(
-                                  playerId,
-                                  doc.id,
-                                  doc.fileUrl,
-                                ),
-                              );
-                            },
-                          ),
-                        ],
+                      trailing: IconButton(
+                        icon: const Icon(Icons.open_in_new, size: 20, color: AppColors.primary),
+                        tooltip: 'View / Download Document',
+                        onPressed: () async {
+                          final uri = Uri.parse(doc.fileUrl);
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri,
+                                mode: LaunchMode.externalApplication);
+                          }
+                        },
                       ),
                     );
                   },

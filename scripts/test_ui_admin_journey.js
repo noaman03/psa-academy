@@ -244,7 +244,7 @@ async function runAdminJourney() {
     assert('Click Logout Button', clickedLogout);
     await new Promise((r) => setTimeout(r, 3000));
 
-    const onLogin = await waitForText(page, 'Sign in to access', 10000);
+    const onLogin = await waitForText(page, 'Welcome back', 10000);
     assert('Redirected to Login Screen on Logout', onLogin);
   } finally {
     await browser.close();

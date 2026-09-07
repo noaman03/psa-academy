@@ -50,17 +50,17 @@ describe('Storage Security Rules', () => {
   });
 
   describe('Player User', () => {
-    it('allowed to upload valid PDF or Image to own directory (< 15MB)', async () => {
+    it('must NOT be able to upload documents (read-only for players)', async () => {
       const storage = testEnv.authenticatedContext('player_1').storage();
       const pdfRef = storage.ref('player_documents/player_1/medical.pdf');
       const imgRef = storage.ref('player_documents/player_1/photo.jpg');
 
       const dummyBuffer = Buffer.from('dummy-content');
 
-      await assertSucceeds(
+      await assertFails(
         pdfRef.put(dummyBuffer, { contentType: 'application/pdf' })
       );
-      await assertSucceeds(
+      await assertFails(
         imgRef.put(dummyBuffer, { contentType: 'image/jpeg' })
       );
     });
@@ -74,8 +74,34 @@ describe('Storage Security Rules', () => {
       );
     });
 
-    it('must NOT be able to upload invalid MIME types (e.g. executables, html)', async () => {
+    it('must NOT be able to delete any player documents', async () => {
       const storage = testEnv.authenticatedContext('player_1').storage();
+      const ownRef = storage.ref('player_documents/player_1/doc.pdf');
+      const otherRef = storage.ref('player_documents/player_2/doc.pdf');
+
+      await assertFails(ownRef.delete());
+      await assertFails(otherRef.delete());
+    });
+  });
+
+  describe('Admin User', () => {
+    it('allowed to upload valid PDF or Image (< 15MB)', async () => {
+      const storage = testEnv.authenticatedContext('admin_1', { role: 'admin' }).storage();
+      const pdfRef = storage.ref('player_documents/player_1/medical.pdf');
+      const imgRef = storage.ref('player_documents/player_1/photo.jpg');
+
+      const dummyBuffer = Buffer.from('dummy-content');
+
+      await assertSucceeds(
+        pdfRef.put(dummyBuffer, { contentType: 'application/pdf' })
+      );
+      await assertSucceeds(
+        imgRef.put(dummyBuffer, { contentType: 'image/jpeg' })
+      );
+    });
+
+    it('must NOT be able to upload invalid MIME types (e.g. executables, html)', async () => {
+      const storage = testEnv.authenticatedContext('admin_1', { role: 'admin' }).storage();
       const exeRef = storage.ref('player_documents/player_1/malware.exe');
       const htmlRef = storage.ref('player_documents/player_1/script.html');
 
@@ -92,7 +118,7 @@ describe('Storage Security Rules', () => {
     });
 
     it('must NOT be able to upload files exceeding 15MB limit', async () => {
-      const storage = testEnv.authenticatedContext('player_1').storage();
+      const storage = testEnv.authenticatedContext('admin_1', { role: 'admin' }).storage();
       const largeRef = storage.ref('player_documents/player_1/large.pdf');
 
       // Create a buffer larger than 15MB (16MB)
@@ -103,30 +129,15 @@ describe('Storage Security Rules', () => {
       );
     });
 
-    it('must NOT be able to upload to root or arbitrary directories', async () => {
-      const storage = testEnv.authenticatedContext('player_1').storage();
-      const rootRef = storage.ref('root_file.pdf');
-      const adminRef = storage.ref('admin_docs/secret.pdf');
-
-      await assertFails(
-        rootRef.put(Buffer.from('data'), { contentType: 'application/pdf' })
-      );
-      await assertFails(
-        adminRef.put(Buffer.from('data'), { contentType: 'application/pdf' })
-      );
-    });
-
-    it('allowed to delete own files, but NOT other player files', async () => {
-      const storage = testEnv.authenticatedContext('player_1').storage();
-      const ownRef = storage.ref('player_documents/player_1/doc.pdf');
+    it('allowed to delete player files', async () => {
+      const adminStorage = testEnv.authenticatedContext('admin_1', { role: 'admin' }).storage();
+      const docRef = adminStorage.ref('player_documents/player_1/doc.pdf');
 
       await assertSucceeds(
-        ownRef.put(Buffer.from('content'), { contentType: 'application/pdf' })
+        docRef.put(Buffer.from('content'), { contentType: 'application/pdf' })
       );
-      await assertSucceeds(ownRef.delete());
-
-      const otherRef = storage.ref('player_documents/player_2/doc.pdf');
-      await assertFails(otherRef.delete());
+      await assertSucceeds(docRef.delete());
     });
   });
 });
+

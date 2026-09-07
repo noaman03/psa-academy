@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/utils/formatters.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/coach_controller.dart';
 import '../../widgets/common/app_button.dart';
@@ -12,6 +11,7 @@ import '../../widgets/common/app_scaffold.dart';
 import '../../widgets/common/confirmation_dialog.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/status_badge.dart';
+import '../../widgets/common/training_details_dialog.dart';
 import '../../routes/app_routes.dart';
 
 class CoachScreen extends StatefulWidget {
@@ -156,13 +156,27 @@ class _CoachScreenState extends State<CoachScreen> {
                         ),
                       ],
                     ),
-                    Text(
-                      'Rate: ${AppFormatters.formatCurrency(hourlyRate)}/hr',
-                      style: AppTypography.labelMd.copyWith(
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
                         color: activeSession != null
-                            ? AppColors.primaryLight
-                            : AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
+                            ? AppColors.primaryLight.withValues(alpha: 0.2)
+                            : AppColors.surface,
+                        borderRadius: AppRadius.fullBorderRadius,
+                        border: Border.all(
+                          color: activeSession != null
+                              ? AppColors.primaryLight
+                              : AppColors.outline,
+                        ),
+                      ),
+                      child: Text(
+                        activeSession != null ? 'ON DUTY' : 'STANDBY',
+                        style: AppTypography.labelSm.copyWith(
+                          color: activeSession != null
+                              ? AppColors.primaryLight
+                              : AppColors.textSecondary,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
@@ -193,7 +207,7 @@ class _CoachScreenState extends State<CoachScreen> {
                         context: context,
                         title: 'End Work Shift',
                         message:
-                          'Are you sure you want to clock out? This will finalize your shift hours and salary.',
+                          'Are you sure you want to clock out? This will finalize your active shift hours.',
                         confirmText: 'Check Out',
                         onConfirm: () async {
                           final uid = auth.currentUser?.id;
@@ -315,6 +329,7 @@ class _CoachScreenState extends State<CoachScreen> {
       itemBuilder: (context, index) {
         final item = list[index];
         return ListTile(
+          onTap: () => TrainingDetailsDialog.show(context, item),
           leading: CircleAvatar(
             backgroundColor: AppColors.primaryContainer,
             child: Text(
@@ -339,11 +354,22 @@ class _CoachScreenState extends State<CoachScreen> {
               color: AppColors.textSecondary,
             ),
           ),
-          trailing: StatusBadge(
-            label: item.type.toUpperCase(),
-            statusType: item.type == 'recovery'
-                ? StatusType.pending
-                : StatusType.paid,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              StatusBadge(
+                label: item.type.toUpperCase(),
+                statusType: item.type == 'recovery'
+                    ? StatusType.pending
+                    : StatusType.paid,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              const Icon(
+                Icons.arrow_forward_ios,
+                size: 13,
+                color: AppColors.textTertiary,
+              ),
+            ],
           ),
         );
       },

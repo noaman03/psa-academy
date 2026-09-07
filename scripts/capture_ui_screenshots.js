@@ -9,6 +9,7 @@ const {
   setupPage,
   enableFlutterSemantics,
   clickButtonByText,
+  clickCardByText,
   waitForText,
   loginViaUI,
 } = require('./ui_test_harness');
@@ -35,7 +36,7 @@ async function captureForViewport(browser, isMobile) {
     console.log('1. Capturing 01_login.png...');
     await page.goto(`${BASE_URL}/#/login`, { waitUntil: 'domcontentloaded' });
     await enableFlutterSemantics(page);
-    await waitForText(page, 'Sign in to access', 12000);
+    await waitForText(page, 'Welcome back', 12000);
     await new Promise((r) => setTimeout(r, 2000));
     await page.screenshot({ path: path.join(outDir, '01_login.png') });
 
@@ -66,7 +67,7 @@ async function captureForViewport(browser, isMobile) {
 
     // Logout Admin
     await clickButtonByText(page, 'Logout');
-    await waitForText(page, 'Sign in to access', 10000);
+    await waitForText(page, 'Welcome back', 10000);
 
     // 3. COACH FLOW
     console.log('3. Logging in as Coach...');
@@ -93,7 +94,7 @@ async function captureForViewport(browser, isMobile) {
 
     // Logout Coach
     await clickButtonByText(page, 'Logout');
-    await waitForText(page, 'Sign in to access', 10000);
+    await waitForText(page, 'Welcome back', 10000);
 
     // 4. PLAYER FLOW
     console.log('4. Logging in as Player...');
@@ -103,7 +104,15 @@ async function captureForViewport(browser, isMobile) {
     await page.screenshot({ path: path.join(outDir, '09_player_dashboard.png') });
 
     console.log('Capturing 10_player_qr_pass.png...');
-    await clickButtonByText(page, 'View QR Pass');
+    await page.evaluate(() => {
+      const all = Array.from(document.querySelectorAll('flt-semantics[role="button"]'));
+      const candidates = all.filter((b) =>
+        (b.getAttribute('aria-label') || '').includes('Digital Training Pass') ||
+        (b.innerText || '').includes('Digital Training Pass')
+      );
+      const target = candidates[candidates.length - 1];
+      if (target) target.click();
+    });
     await waitForText(page, 'Player Training Pass', 8000);
     await new Promise((r) => setTimeout(r, 2000));
     await page.screenshot({ path: path.join(outDir, '10_player_qr_pass.png') });
@@ -125,7 +134,7 @@ async function captureForViewport(browser, isMobile) {
 
     // Logout Player
     await clickButtonByText(page, 'Logout');
-    await waitForText(page, 'Sign in to access', 10000);
+    await waitForText(page, 'Welcome back', 10000);
 
     console.log(`SUCCESS: Captured all screenshots for ${mode}!`);
   } finally {

@@ -307,4 +307,39 @@ class AdminController extends ChangeNotifier {
       return true;
     });
   }
+
+  Future<bool> assignTrainingSnapshot({
+    required String attendanceId,
+    required String playerId,
+    required String playerName,
+    String? coachId,
+    String? coachName,
+    String? templateId,
+    required String trainingName,
+    required String category,
+    String? targetMuscle,
+    required String description,
+    required List<ExerciseEntity> exercises,
+    String? notes,
+  }) async {
+    final res = await _templateRepository.assignTrainingSnapshot(
+      attendanceId: attendanceId,
+      playerId: playerId,
+      playerName: playerName,
+      coachId: coachId,
+      coachName: coachName,
+      templateId: templateId,
+      trainingName: trainingName,
+      category: category,
+      targetMuscle: targetMuscle,
+      description: description,
+      exercises: exercises,
+      notes: notes,
+    );
+    return res.fold((l) => false, (r) {
+      loadDashboard();
+      return true;
+    });
+  }
 }
+

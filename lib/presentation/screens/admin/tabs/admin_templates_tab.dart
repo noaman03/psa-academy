@@ -4,6 +4,8 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import 'package:intl/intl.dart';
+import '../../../../domain/entities/attendance_entity.dart';
 import '../../../../domain/entities/training_template_entity.dart';
 import '../../../controllers/admin_controller.dart';
 import '../../../widgets/common/app_button.dart';
@@ -235,6 +237,207 @@ class _AdminTemplatesTabState extends State<AdminTemplatesTab> {
     );
   }
 
+  void _showAssignTemplateDialog(TrainingTemplateEntity template) {
+    final adminController = context.read<AdminController>();
+    final attendanceList =
+        adminController.dashboardState.data?.recentAttendance ?? [];
+
+    if (attendanceList.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'No recent player sessions available to assign training to. Please record a check-in first.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    AttendanceEntity selectedAttendance = attendanceList.first;
+    List<ExerciseEntity> draftExercises =
+        template.exercises.map((e) => e.copyWith()).toList();
+    final notesController = TextEditingController();
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: AppRadius.lgBorderRadius),
+            title: Text(
+              'Assign "${template.trainingName}" to Session',
+              style: AppTypography.headlineSm.copyWith(fontSize: 18),
+            ),
+            content: SizedBox(
+              width: 520,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Select Player Session:',
+                      style: AppTypography.labelMd
+                          .copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    DropdownButtonFormField<AttendanceEntity>(
+                      initialValue: selectedAttendance,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                      ),
+                      items: attendanceList.map((a) {
+                        return DropdownMenuItem(
+                          value: a,
+                          child: Text(
+                            '${a.playerName} • ${DateFormat('dd MMM hh:mm a').format(a.date)}',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (newA) {
+                        if (newA != null) {
+                          setDialogState(() => selectedAttendance = newA);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Snapshot Exercises (${draftExercises.length})',
+                          style: AppTypography.labelLg
+                              .copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        Text(
+                          'Cloned copy — master remains untouched',
+                          style: AppTypography.labelSm.copyWith(
+                            color: AppColors.textTertiary,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    ...draftExercises.asMap().entries.map((entry) {
+                      final i = entry.key;
+                      final ex = entry.value;
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+                        padding: const EdgeInsets.all(AppSpacing.xs),
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: AppRadius.smBorderRadius,
+                          border: Border.all(color: AppColors.outlineVariant),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: TextFormField(
+                                initialValue: ex.exerciseName,
+                                decoration: const InputDecoration(
+                                  labelText: 'Exercise',
+                                  isDense: true,
+                                ),
+                                onChanged: (v) => draftExercises[i] =
+                                    draftExercises[i].copyWith(exerciseName: v),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.xs),
+                            Expanded(
+                              flex: 1,
+                              child: TextFormField(
+                                initialValue: ex.sets,
+                                decoration: const InputDecoration(
+                                  labelText: 'Sets',
+                                  isDense: true,
+                                ),
+                                onChanged: (v) => draftExercises[i] =
+                                    draftExercises[i].copyWith(sets: v),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.xs),
+                            Expanded(
+                              flex: 1,
+                              child: TextFormField(
+                                initialValue: ex.reps,
+                                decoration: const InputDecoration(
+                                  labelText: 'Reps',
+                                  isDense: true,
+                                ),
+                                onChanged: (v) => draftExercises[i] =
+                                    draftExercises[i].copyWith(reps: v),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      controller: notesController,
+                      labelText: 'Coach / Session Notes',
+                      hintText: 'e.g. Focus on sprint technique and posture',
+                      maxLines: 2,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              AppButton(
+                text: 'Assign Snapshot',
+                size: AppButtonSize.small,
+                isLoading: isSaving,
+                onPressed: () async {
+                  setDialogState(() => isSaving = true);
+                  final ok = await adminController.assignTrainingSnapshot(
+                    attendanceId: selectedAttendance.id,
+                    playerId: selectedAttendance.playerId,
+                    playerName: selectedAttendance.playerName,
+                    coachId: selectedAttendance.coachId,
+                    coachName: selectedAttendance.coachName,
+                    templateId: template.id,
+                    trainingName: template.trainingName,
+                    category: template.category,
+                    targetMuscle: template.targetMuscle,
+                    description: template.description,
+                    exercises: draftExercises,
+                    notes: notesController.text.trim(),
+                  );
+
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(ok
+                            ? 'Assigned workout snapshot to ${selectedAttendance.playerName}!'
+                            : 'Failed to assign workout snapshot.'),
+                        backgroundColor:
+                            ok ? AppColors.success : AppColors.error,
+                      ),
+                    );
+                  }
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final adminController = context.watch<AdminController>();
@@ -367,6 +570,20 @@ class _AdminTemplatesTabState extends State<AdminTemplatesTab> {
                                   ),
                                 ),
                                 const SizedBox(height: AppSpacing.sm),
+                                const Divider(color: AppColors.outlineVariant),
+                                const SizedBox(height: AppSpacing.xs),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    AppButton(
+                                      text: 'Assign Snapshot to Session',
+                                      icon: Icons.assignment_turned_in_outlined,
+                                      size: AppButtonSize.small,
+                                      onPressed: () =>
+                                          _showAssignTemplateDialog(t),
+                                    ),
+                                  ],
+                                ),
                               ],
                             ),
                           ),

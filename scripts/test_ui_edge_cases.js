@@ -122,7 +122,7 @@ async function runEdgeCases() {
     await waitForText(page, 'Coach Shift & Scanner', 10000);
 
     await clickButtonByText(page, 'Logout');
-    await waitForText(page, 'Sign in to access', 10000);
+    await waitForText(page, 'Welcome back', 10000);
 
     // 4. INVALID CREDENTIALS ERROR HANDLING & NO INFINITE SPINNER
     console.log('\n--- 4. INVALID CREDENTIALS ERROR HANDLING ---');
@@ -167,7 +167,7 @@ async function runEdgeCases() {
     assert('Click Cancel on Reset Modal', clickedCancel);
     await new Promise((r) => setTimeout(r, 1500));
 
-    const onLoginAgain = await waitForText(page, 'Sign in to access', 8000);
+    const onLoginAgain = await waitForText(page, 'Welcome back', 8000);
     assert('Returned to Clean Login Screen', onLoginAgain);
   } finally {
     await browser.close();

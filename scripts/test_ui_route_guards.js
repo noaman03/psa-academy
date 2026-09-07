@@ -41,19 +41,19 @@ async function runRouteGuards() {
     console.log('--- 1. UNAUTHENTICATED URL ACCESS TO /admin ---');
     await page.goto(`${BASE_URL}/#/admin`, { waitUntil: 'domcontentloaded' });
     await enableFlutterSemantics(page);
-    const unauthAdminOnLogin = await waitForText(page, 'Sign in to access', 15000);
+    const unauthAdminOnLogin = await waitForText(page, 'Welcome back', 25000);
     assert('Unauthenticated /admin Blocked & Redirected to Login', unauthAdminOnLogin);
 
     console.log('\n--- 2. UNAUTHENTICATED URL ACCESS TO /coach ---');
     await page.goto(`${BASE_URL}/#/coach`, { waitUntil: 'domcontentloaded' });
     await enableFlutterSemantics(page);
-    const unauthCoachOnLogin = await waitForText(page, 'Sign in to access', 15000);
+    const unauthCoachOnLogin = await waitForText(page, 'Welcome back', 15000);
     assert('Unauthenticated /coach Blocked & Redirected to Login', unauthCoachOnLogin);
 
     console.log('\n--- 3. UNAUTHENTICATED URL ACCESS TO /player ---');
     await page.goto(`${BASE_URL}/#/player`, { waitUntil: 'domcontentloaded' });
     await enableFlutterSemantics(page);
-    const unauthPlayerOnLogin = await waitForText(page, 'Sign in to access', 15000);
+    const unauthPlayerOnLogin = await waitForText(page, 'Welcome back', 15000);
     assert('Unauthenticated /player Blocked & Redirected to Login', unauthPlayerOnLogin);
 
     // 2. PLAYER ATTEMPTING TO ACCESS /admin WORKSPACE
@@ -78,7 +78,7 @@ async function runRouteGuards() {
     // Logout player
     console.log('Logging out player...');
     await clickButtonByText(page, 'Logout');
-    await waitForText(page, 'Sign in to access', 10000);
+    await waitForText(page, 'Welcome back', 10000);
 
     // 3. COACH ATTEMPTING TO ACCESS /admin WORKSPACE
     console.log('\n--- 5. AUTHENTICATED COACH ACCESSING /admin ---');
@@ -101,7 +101,7 @@ async function runRouteGuards() {
     // Logout coach
     console.log('Logging out coach...');
     await clickButtonByText(page, 'Logout');
-    await waitForText(page, 'Sign in to access', 10000);
+    await waitForText(page, 'Welcome back', 10000);
   } finally {
     await browser.close();
   }
